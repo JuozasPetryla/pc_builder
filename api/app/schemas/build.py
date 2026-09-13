@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -30,21 +29,6 @@ class BuildReplace(BuildInput):
     pass
 
 
-class CompatibilityIssue(BaseModel):
-    code: str
-    message: str
-    component_ids: list[int]
-
-
-class CompatibilityRead(BaseModel):
-    build_id: int
-    compatible: bool
-    complete: bool
-    total_price: Decimal
-    missing_categories: list[str]
-    issues: list[CompatibilityIssue]
-
-
 class BuildRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,6 +39,5 @@ class BuildRead(BaseModel):
     is_public: bool
     components: list[ComponentRead]
     reviews: list[ReviewRead]
-    compatibility: CompatibilityRead
     created_at: datetime
     updated_at: datetime

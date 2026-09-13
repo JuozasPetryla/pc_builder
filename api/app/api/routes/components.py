@@ -8,7 +8,7 @@ from app.models.domain import Component, ComponentCategory, RetailOffer
 from app.schemas.common import ErrorResponse
 from app.schemas.component import ComponentCreate, ComponentRead, ComponentReplace
 
-router = APIRouter(prefix="/components", tags=["Components"])
+router = APIRouter(prefix="/components", tags=["Komponentai"])
 ERROR_RESPONSES = {
     404: {"model": ErrorResponse, "description": "Komponentas nerastas."},
     409: {"model": ErrorResponse, "description": "Toks komponentas jau egzistuoja."},

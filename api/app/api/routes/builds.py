@@ -8,12 +8,10 @@ from app.schemas.build import (
     BuildCreate,
     BuildRead,
     BuildReplace,
-    CompatibilityRead,
 )
 from app.schemas.common import ErrorResponse
-from app.services.compatibility import evaluate_build
 
-router = APIRouter(prefix="/builds", tags=["Builds"])
+router = APIRouter(prefix="/builds", tags=["Komplektai"])
 NOT_FOUND = {"model": ErrorResponse, "description": "Komplektas arba komponentas nerastas."}
 
 
@@ -66,7 +64,6 @@ def _to_read(build: Build) -> BuildRead:
         is_public=build.is_public,
         components=build.components,
         reviews=build.reviews,
-        compatibility=evaluate_build(build),
         created_at=build.created_at,
         updated_at=build.updated_at,
     )
@@ -77,7 +74,7 @@ def _to_read(build: Build) -> BuildRead:
     response_model=list[BuildRead],
     operation_id="listBuilds",
     summary="Gauti komplektų sąrašą",
-    description="Grąžina komplektus su dalimis, kaina, atsiliepimais ir suderinamumo būsena.",
+    description="Grąžina komplektus su komponentais, jų pardavėjų pasiūlymais ir atsiliepimais.",
 )
 def list_builds(
     public_only: bool = Query(default=False),
@@ -124,7 +121,10 @@ def create_build(payload: BuildCreate, db: Session = Depends(get_db)) -> BuildRe
     response_model=BuildRead,
     operation_id="getBuild",
     summary="Gauti komplektą",
-    description="Grąžina komplekto viešą informaciją, dalis, įsigijimo vietas, kainą ir atsiliepimus.",
+    description=(
+        "Hierarchiniu atsakymu grąžina Komplektas → komponentas → pardavėjo pasiūlymas "
+        "struktūrą ir atsiliepimus."
+    ),
     responses={404: NOT_FOUND},
 )
 def get_build(build_id: int, db: Session = Depends(get_db)) -> BuildRead:
@@ -167,60 +167,3 @@ def delete_build(build_id: int, db: Session = Depends(get_db)) -> Response:
     db.delete(build)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.put(
-    "/{build_id}/components/{component_id}",
-    response_model=BuildRead,
-    operation_id="setBuildComponent",
-    summary="Pridėti arba pakeisti komplekto komponentą",
-    description="Idempotentiškai prideda komponentą; tos pačios kategorijos dalis pakeičiama.",
-    responses={404: NOT_FOUND},
-)
-def set_build_component(
-    build_id: int, component_id: int, db: Session = Depends(get_db)
-) -> BuildRead:
-    build = get_build_or_404(db, build_id)
-    component = db.scalar(
-        select(Component)
-        .where(Component.id == component_id)
-        .options(selectinload(Component.offers))
-    )
-    if component is None:
-        raise HTTPException(status_code=404, detail="Komponentas nerastas.")
-    build.components = [item for item in build.components if item.category != component.category]
-    build.components.append(component)
-    db.commit()
-    return _to_read(get_build_or_404(db, build_id))
-
-
-@router.delete(
-    "/{build_id}/components/{component_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    operation_id="removeBuildComponent",
-    summary="Pašalinti komponentą iš komplekto",
-    description="Pašalina tik komponento susiejimą; katalogo komponentas lieka duomenų bazėje.",
-    responses={404: NOT_FOUND},
-)
-def remove_build_component(
-    build_id: int, component_id: int, db: Session = Depends(get_db)
-) -> Response:
-    build = get_build_or_404(db, build_id)
-    component = next((item for item in build.components if item.id == component_id), None)
-    if component is None:
-        raise HTTPException(status_code=404, detail="Komponentas komplekte nerastas.")
-    build.components.remove(component)
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.get(
-    "/{build_id}/compatibility",
-    response_model=CompatibilityRead,
-    operation_id="checkBuildCompatibility",
-    summary="Patikrinti komplekto suderinamumą ir kainą",
-    description="Tikrina lizdą, RAM tipą, korpuso formatą, GPU dydį, PSU galią ir aušintuvą; suskaičiuoja mažiausią kainą.",
-    responses={404: NOT_FOUND},
-)
-def check_build_compatibility(build_id: int, db: Session = Depends(get_db)) -> CompatibilityRead:
-    return evaluate_build(get_build_or_404(db, build_id))

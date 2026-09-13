@@ -88,7 +88,12 @@ Paleidus pasiekiama:
 - OpenAPI JSON – <http://localhost:8000/api/openapi.json>;
 - statinė OpenAPI kopija – [`api/openapi.json`](api/openapi.json).
 
-### Realizuoti 15 API metodų
+### Realizuoti API metodai
+
+Swagger dokumentacijoje metodai aiškiai atskirti į keturias grupes. Trys pagrindiniai
+taikomosios srities objektai turi po penkis metodus: keturias CRUD operacijas ir
+vieną sąrašo operaciją. Papildoma komponentų ir specifikacijų grupė skirta
+komplekto komponentų priskyrimui, administravimui ir suderinamumui.
 
 | Nr. | Metodas | Kelias | Paskirtis | Sėkmės kodas |
 |---:|---|---|---|---:|
@@ -102,11 +107,21 @@ Paleidus pasiekiama:
 | 8 | `GET` | `/api/v1/builds/{build_id}` | Gauti komplektą | 200 |
 | 9 | `PUT` | `/api/v1/builds/{build_id}` | Pilnai atnaujinti komplektą | 200 |
 | 10 | `DELETE` | `/api/v1/builds/{build_id}` | Pašalinti komplektą | 204 |
-| 11 | `PUT` | `/api/v1/builds/{build_id}/components/{component_id}` | Pridėti arba pakeisti kategorijos dalį | 200 |
-| 12 | `DELETE` | `/api/v1/builds/{build_id}/components/{component_id}` | Pašalinti dalį iš komplekto | 204 |
-| 13 | `GET` | `/api/v1/builds/{build_id}/compatibility` | Tikrinti suderinamumą ir skaičiuoti kainą | 200 |
-| 14 | `POST` | `/api/v1/builds/{build_id}/reviews` | Įvertinti ir pakomentuoti komplektą | 201 |
-| 15 | `DELETE` | `/api/v1/reviews/{review_id}` | Pašalinti atsiliepimą | 204 |
+| 11 | `GET` | `/api/v1/components/{component_id}/offers` | Gauti komponento pardavėjų pasiūlymų sąrašą | 200 |
+| 12 | `POST` | `/api/v1/components/{component_id}/offers` | Sukurti komponento pardavėjo pasiūlymą | 201 |
+| 13 | `GET` | `/api/v1/offers/{offer_id}` | Gauti pardavėjo pasiūlymą | 200 |
+| 14 | `PUT` | `/api/v1/offers/{offer_id}` | Pilnai atnaujinti pardavėjo pasiūlymą | 200 |
+| 15 | `DELETE` | `/api/v1/offers/{offer_id}` | Pašalinti pardavėjo pasiūlymą | 204 |
+| 16 | `GET` | `/api/v1/builds/{build_id}/reviews` | Gauti konkretaus komplekto atsiliepimų sąrašą | 200 |
+| 17 | `POST` | `/api/v1/builds/{build_id}/reviews` | Sukurti atsiliepimą | 201 |
+| 18 | `GET` | `/api/v1/reviews/{review_id}` | Gauti atsiliepimą | 200 |
+| 19 | `PUT` | `/api/v1/reviews/{review_id}` | Pilnai atnaujinti atsiliepimą | 200 |
+| 20 | `DELETE` | `/api/v1/reviews/{review_id}` | Pašalinti atsiliepimą | 204 |
+
+Hierarchinis `GET /api/v1/builds/{build_id}` atsakymas pateikia struktūrą
+`komplektas → komponentas → pardavėjo pasiūlymas`. Komponento `category` nusako
+tipą (`cpu`, `gpu`, `memory` ir kt.), o jo `offers` lauke pateikiamos parduotuvės,
+kainos ir įsigijimo nuorodos.
 
 Užklausos ir atsakymai su turiniu naudoja `application/json`; sėkmingi `DELETE` grąžina `204 No Content` be atsakymo kūno. Neegzistuojantis resursas grąžina `404`, struktūriškai blogas payload – `422`, o semantiškai neteisingas komplektas (dvi tos pačios kategorijos dalys) – `400`.
 
@@ -144,7 +159,8 @@ docker compose --profile demo run --rm demo
 
 Trumpinys tai pačiai komandai: `make demo`. Paleidimui taip pat galima naudoti `make up`, testams – `make test`, o pradinei DB būsenai atkurti – `make reset`.
 
-Kolekcija vykdo 18 užklausų: 15 skirtingų API operacijų ir tris papildomus `404`, `422` bei `400` scenarijus. Sukurti laikini duomenys kolekcijos pabaigoje pašalinami, todėl ją galima kartoti.
+Kolekcija vykdo API operacijas ir papildomus `404`, `422` bei `400` scenarijus.
+Sukurti laikini duomenys kolekcijos pabaigoje pašalinami, todėl ją galima kartoti.
 
 Automatiniai API testai vykdomi izoliuotame konteineryje:
 

@@ -1,15 +1,52 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.routes.builds import get_build_or_404
 from app.db.session import get_db
 from app.models.domain import Review
 from app.schemas.common import ErrorResponse
-from app.schemas.review import ReviewCreate, ReviewRead
+from app.schemas.review import ReviewCreate, ReviewRead, ReviewReplace
 
-router = APIRouter(tags=["Reviews"])
+router = APIRouter(tags=["Atsiliepimai"])
+NOT_FOUND = {404: {"model": ErrorResponse, "description": "Atsiliepimas nerastas."}}
+
+
+def _get_review(db: Session, review_id: int) -> Review:
+    review = db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Atsiliepimas nerastas.")
+    return review
+
+
+@router.get(
+    "/builds/{build_id}/reviews",
+    response_model=list[ReviewRead],
+    operation_id="listBuildReviews",
+    summary="Gauti komplekto atsiliepimų sąrašą",
+    description=(
+        "Hierarchinis sąrašo metodas: grąžina visus konkrečiam komplektui "
+        "priklausančius atsiliepimus."
+    ),
+    responses={404: {"model": ErrorResponse, "description": "Komplektas nerastas."}},
+)
+def list_build_reviews(
+    build_id: int,
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Review]:
+    get_build_or_404(db, build_id)
+    query = (
+        select(Review)
+        .where(Review.build_id == build_id)
+        .order_by(Review.id)
+        .offset(offset)
+        .limit(limit)
+    )
+    return list(db.scalars(query).all())
 
 
 @router.post(
@@ -39,18 +76,51 @@ def create_review(build_id: int, payload: ReviewCreate, db: Session = Depends(ge
     return review
 
 
+@router.get(
+    "/reviews/{review_id}",
+    response_model=ReviewRead,
+    operation_id="getReview",
+    summary="Gauti atsiliepimą",
+    description="Grąžina vieną atsiliepimą pagal jo identifikatorių.",
+    responses=NOT_FOUND,
+)
+def get_review(review_id: int, db: Session = Depends(get_db)) -> Review:
+    return _get_review(db, review_id)
+
+
+@router.put(
+    "/reviews/{review_id}",
+    response_model=ReviewRead,
+    operation_id="replaceReview",
+    summary="Atnaujinti atsiliepimą",
+    description="Pilnai pakeičia atsiliepimo autorių, įvertinimą ir komentarą.",
+    responses={
+        **NOT_FOUND,
+        422: {"description": "Neteisingas įvertinimas arba komentaras."},
+    },
+)
+def replace_review(
+    review_id: int, payload: ReviewReplace, db: Session = Depends(get_db)
+) -> Review:
+    review = _get_review(db, review_id)
+    review.author_name = payload.author_name
+    review.rating = payload.rating
+    review.comment = payload.comment
+    db.commit()
+    db.refresh(review)
+    return review
+
+
 @router.delete(
     "/reviews/{review_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteReview",
     summary="Pašalinti atsiliepimą",
     description="Pašalina komplekto įvertinimą ir komentarą.",
-    responses={404: {"model": ErrorResponse, "description": "Atsiliepimas nerastas."}},
+    responses=NOT_FOUND,
 )
 def delete_review(review_id: int, db: Session = Depends(get_db)) -> Response:
-    review = db.get(Review, review_id)
-    if review is None:
-        raise HTTPException(status_code=404, detail="Atsiliepimas nerastas.")
+    review = _get_review(db, review_id)
     db.delete(review)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -12,7 +12,7 @@
     "/api/v1/components": {
       "get": {
         "tags": [
-          "Components"
+          "Komponentai"
         ],
         "summary": "Gauti komponentų katalogą",
         "description": "Grąžina komponentus su kainomis ir įsigijimo vietomis; galima filtruoti pagal kategoriją.",
@@ -87,7 +87,7 @@
       },
       "post": {
         "tags": [
-          "Components"
+          "Komponentai"
         ],
         "summary": "Sukurti komponentą",
         "description": "Sukuria katalogo komponentą kartu su bent viena įsigijimo vieta.",
@@ -142,7 +142,7 @@
     "/api/v1/components/{component_id}": {
       "get": {
         "tags": [
-          "Components"
+          "Komponentai"
         ],
         "summary": "Gauti komponentą",
         "description": "Grąžina vieną komponentą, jo techninius duomenis, kainas ir pardavėjus.",
@@ -193,7 +193,7 @@
       },
       "put": {
         "tags": [
-          "Components"
+          "Komponentai"
         ],
         "summary": "Atnaujinti komponentą",
         "description": "Pilnai pakeičia komponento duomenis ir jo įsigijimo vietas.",
@@ -257,7 +257,7 @@
       },
       "delete": {
         "tags": [
-          "Components"
+          "Komponentai"
         ],
         "summary": "Pašalinti komponentą",
         "description": "Pašalina komponentą, jo pasiūlymus ir susiejimus su komplektais.",
@@ -303,10 +303,10 @@
     "/api/v1/builds": {
       "get": {
         "tags": [
-          "Builds"
+          "Komplektai"
         ],
         "summary": "Gauti komplektų sąrašą",
-        "description": "Grąžina komplektus su dalimis, kaina, atsiliepimais ir suderinamumo būsena.",
+        "description": "Grąžina komplektus su komponentais, jų pardavėjų pasiūlymais ir atsiliepimais.",
         "operationId": "listBuilds",
         "parameters": [
           {
@@ -372,7 +372,7 @@
       },
       "post": {
         "tags": [
-          "Builds"
+          "Komplektai"
         ],
         "summary": "Sukurti kompiuterio komplektą",
         "description": "Sukuria privatų arba viešą komplektą ir pasirinktinai iš karto priskiria komponentus.",
@@ -427,10 +427,10 @@
     "/api/v1/builds/{build_id}": {
       "get": {
         "tags": [
-          "Builds"
+          "Komplektai"
         ],
         "summary": "Gauti komplektą",
-        "description": "Grąžina komplekto viešą informaciją, dalis, įsigijimo vietas, kainą ir atsiliepimus.",
+        "description": "Hierarchiniu atsakymu grąžina Komplektas → komponentas → pardavėjo pasiūlymas struktūrą ir atsiliepimus.",
         "operationId": "getBuild",
         "parameters": [
           {
@@ -478,7 +478,7 @@
       },
       "put": {
         "tags": [
-          "Builds"
+          "Komplektai"
         ],
         "summary": "Atnaujinti komplektą",
         "description": "Pilnai pakeičia komplekto metaduomenis, viešumo būseną ir komponentų sąrašą.",
@@ -542,7 +542,7 @@
       },
       "delete": {
         "tags": [
-          "Builds"
+          "Komplektai"
         ],
         "summary": "Pašalinti komplektą",
         "description": "Pašalina komplektą, jo komponentų susiejimus ir atsiliepimus.",
@@ -585,14 +585,14 @@
         }
       }
     },
-    "/api/v1/builds/{build_id}/components/{component_id}": {
-      "put": {
+    "/api/v1/builds/{build_id}/reviews": {
+      "get": {
         "tags": [
-          "Builds"
+          "Atsiliepimai"
         ],
-        "summary": "Pridėti arba pakeisti komplekto komponentą",
-        "description": "Idempotentiškai prideda komponentą; tos pačios kategorijos dalis pakeičiama.",
-        "operationId": "setBuildComponent",
+        "summary": "Gauti komplekto atsiliepimų sąrašą",
+        "description": "Hierarchinis sąrašo metodas: grąžina visus konkrečiam komplektui priklausančius atsiliepimus.",
+        "operationId": "listBuildReviews",
         "parameters": [
           {
             "name": "build_id",
@@ -604,12 +604,26 @@
             }
           },
           {
-            "name": "component_id",
-            "in": "path",
-            "required": true,
+            "name": "limit",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "title": "Component Id"
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
             }
           }
         ],
@@ -619,13 +633,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BuildRead"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewRead"
+                  },
+                  "title": "Response Listbuildreviews"
                 }
               }
             }
           },
           "404": {
-            "description": "Komplektas arba komponentas nerastas.",
+            "description": "Komplektas nerastas.",
             "content": {
               "application/json": {
                 "schema": {
@@ -646,117 +664,9 @@
           }
         }
       },
-      "delete": {
-        "tags": [
-          "Builds"
-        ],
-        "summary": "Pašalinti komponentą iš komplekto",
-        "description": "Pašalina tik komponento susiejimą; katalogo komponentas lieka duomenų bazėje.",
-        "operationId": "removeBuildComponent",
-        "parameters": [
-          {
-            "name": "build_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Build Id"
-            }
-          },
-          {
-            "name": "component_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Component Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "404": {
-            "description": "Komplektas arba komponentas nerastas.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/builds/{build_id}/compatibility": {
-      "get": {
-        "tags": [
-          "Builds"
-        ],
-        "summary": "Patikrinti komplekto suderinamumą ir kainą",
-        "description": "Tikrina lizdą, RAM tipą, korpuso formatą, GPU dydį, PSU galią ir aušintuvą; suskaičiuoja mažiausią kainą.",
-        "operationId": "checkBuildCompatibility",
-        "parameters": [
-          {
-            "name": "build_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Build Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompatibilityRead"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Komplektas arba komponentas nerastas.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/builds/{build_id}/reviews": {
       "post": {
         "tags": [
-          "Reviews"
+          "Atsiliepimai"
         ],
         "summary": "Įvertinti ir pakomentuoti komplektą",
         "description": "Prideda 1–5 balų įvertinimą ir tekstinį komentarą prie komplekto.",
@@ -810,9 +720,114 @@
       }
     },
     "/api/v1/reviews/{review_id}": {
+      "get": {
+        "tags": [
+          "Atsiliepimai"
+        ],
+        "summary": "Gauti atsiliepimą",
+        "description": "Grąžina vieną atsiliepimą pagal jo identifikatorių.",
+        "operationId": "getReview",
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atsiliepimas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Atsiliepimai"
+        ],
+        "summary": "Atnaujinti atsiliepimą",
+        "description": "Pilnai pakeičia atsiliepimo autorių, įvertinimą ir komentarą.",
+        "operationId": "replaceReview",
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atsiliepimas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Neteisingas įvertinimas arba komentaras."
+          }
+        }
+      },
       "delete": {
         "tags": [
-          "Reviews"
+          "Atsiliepimai"
         ],
         "summary": "Pašalinti atsiliepimą",
         "description": "Pašalina komplekto įvertinimą ir komentarą.",
@@ -834,6 +849,325 @@
           },
           "404": {
             "description": "Atsiliepimas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/components/{component_id}/offers": {
+      "get": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Gauti komponento pardavėjų pasiūlymus",
+        "description": "Hierarchinis sąrašo metodas: grąžina visus konkretaus komponento pardavėjų pasiūlymus.",
+        "operationId": "listComponentOffers",
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OfferRead"
+                  },
+                  "title": "Response Listcomponentoffers"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas arba pasiūlymas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Sukurti komponento pardavėjo pasiūlymą",
+        "description": "Prideda konkrečiam komponentui pardavėją, kainą, nuorodą ir likutį.",
+        "operationId": "createComponentOffer",
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas arba pasiūlymas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Šio pardavėjo pasiūlymas jau yra.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/offers/{offer_id}": {
+      "get": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Gauti pardavėjo pasiūlymą",
+        "description": "Grąžina vieną komponento pardavėjo pasiūlymą.",
+        "operationId": "getOffer",
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas arba pasiūlymas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Atnaujinti pardavėjo pasiūlymą",
+        "description": "Pilnai pakeičia pardavėjo pavadinimą, kainą, nuorodą ir likutį.",
+        "operationId": "replaceOffer",
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas arba pasiūlymas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Šio pardavėjo pasiūlymas jau yra.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Pašalinti pardavėjo pasiūlymą",
+        "description": "Pašalina pasiūlymą, nepašalindamas paties komponento.",
+        "operationId": "deleteOffer",
+        "parameters": [
+          {
+            "name": "offer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Offer Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Komponentas arba pasiūlymas nerastas.",
             "content": {
               "application/json": {
                 "schema": {
@@ -954,9 +1288,6 @@
             "type": "array",
             "title": "Reviews"
           },
-          "compatibility": {
-            "$ref": "#/components/schemas/CompatibilityRead"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -977,7 +1308,6 @@
           "is_public",
           "components",
           "reviews",
-          "compatibility",
           "created_at",
           "updated_at"
         ],
@@ -1035,77 +1365,6 @@
           "owner_name"
         ],
         "title": "BuildReplace"
-      },
-      "CompatibilityIssue": {
-        "properties": {
-          "code": {
-            "type": "string",
-            "title": "Code"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "component_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Component Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "message",
-          "component_ids"
-        ],
-        "title": "CompatibilityIssue"
-      },
-      "CompatibilityRead": {
-        "properties": {
-          "build_id": {
-            "type": "integer",
-            "title": "Build Id"
-          },
-          "compatible": {
-            "type": "boolean",
-            "title": "Compatible"
-          },
-          "complete": {
-            "type": "boolean",
-            "title": "Complete"
-          },
-          "total_price": {
-            "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Total Price"
-          },
-          "missing_categories": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Missing Categories"
-          },
-          "issues": {
-            "items": {
-              "$ref": "#/components/schemas/CompatibilityIssue"
-            },
-            "type": "array",
-            "title": "Issues"
-          }
-        },
-        "type": "object",
-        "required": [
-          "build_id",
-          "compatible",
-          "complete",
-          "total_price",
-          "missing_categories",
-          "issues"
-        ],
-        "title": "CompatibilityRead"
       },
       "ComponentCategory": {
         "type": "string",
@@ -1330,6 +1589,54 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "OfferCreate": {
+        "properties": {
+          "retailer": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Retailer",
+            "examples": [
+              "Kilobaitas"
+            ]
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)"
+              }
+            ],
+            "title": "Price",
+            "examples": [
+              299.99
+            ]
+          },
+          "product_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Product Url"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "retailer",
+          "price",
+          "product_url"
+        ],
+        "title": "OfferCreate"
+      },
       "OfferInput": {
         "properties": {
           "retailer": {
@@ -1412,6 +1719,54 @@
         ],
         "title": "OfferRead"
       },
+      "OfferReplace": {
+        "properties": {
+          "retailer": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Retailer",
+            "examples": [
+              "Kilobaitas"
+            ]
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)"
+              }
+            ],
+            "title": "Price",
+            "examples": [
+              299.99
+            ]
+          },
+          "product_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Product Url"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "retailer",
+          "price",
+          "product_url"
+        ],
+        "title": "OfferReplace"
+      },
       "ReviewCreate": {
         "properties": {
           "author_name": {
@@ -1486,6 +1841,42 @@
         ],
         "title": "ReviewRead"
       },
+      "ReviewReplace": {
+        "properties": {
+          "author_name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Author Name",
+            "examples": [
+              "Mantas"
+            ]
+          },
+          "rating": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "examples": [
+              5
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Comment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "author_name",
+          "rating",
+          "comment"
+        ],
+        "title": "ReviewReplace",
+        "description": "Visas atsiliepimo turinys, naudojamas PUT operacijoje."
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -1527,5 +1918,23 @@
         "title": "ValidationError"
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Komponentai",
+      "description": "Komponento su specifikacijomis CRUD ir katalogo sąrašas."
+    },
+    {
+      "name": "Komplektai",
+      "description": "Kompiuterio komplekto CRUD ir visų komplektų sąrašas."
+    },
+    {
+      "name": "Atsiliepimai",
+      "description": "Atsiliepimo CRUD ir hierarchinis konkretaus komplekto atsiliepimų sąrašas."
+    },
+    {
+      "name": "Pardavėjų pasiūlymai",
+      "description": "Komponento pardavėjų pasiūlymų CRUD ir konkretaus komponento pasiūlymų sąrašas."
+    }
+  ]
 }

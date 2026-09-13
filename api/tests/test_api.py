@@ -17,7 +17,7 @@ COMPONENT_PAYLOAD = {
 }
 
 
-def test_all_fifteen_operations_and_required_status_codes(client: TestClient) -> None:
+def test_all_core_operations_and_required_status_codes(client: TestClient) -> None:
     # 1–5: components CRUD
     response = client.get("/api/v1/components")
     assert response.status_code == 200
@@ -57,23 +57,43 @@ def test_all_fifteen_operations_and_required_status_codes(client: TestClient) ->
     replacement_build = {**build_payload, "is_public": True, "component_ids": list(range(1, 9))}
     response = client.put(f"/api/v1/builds/{build_id}", json=replacement_build)
     assert response.status_code == 200
-    assert response.json()["compatibility"]["compatible"] is True
+    assert len(response.json()["components"]) == 8
 
-    # 11–13: composition and compatibility
-    response = client.put(f"/api/v1/builds/{build_id}/components/{component_id}")
+    # Retail offers CRUD: Component -> RetailOffer hierarchy.
+    initial_offer_id = client.get(f"/api/v1/components/{component_id}").json()["offers"][0]["id"]
+    response = client.get(f"/api/v1/components/{component_id}/offers")
     assert response.status_code == 200
-    assert any(item["id"] == component_id for item in response.json()["components"])
+    assert [offer["id"] for offer in response.json()] == [initial_offer_id]
 
-    response = client.delete(f"/api/v1/builds/{build_id}/components/{component_id}")
-    assert response.status_code == 204
-    assert response.content == b""
-
-    response = client.get("/api/v1/builds/1/compatibility")
+    response = client.get(f"/api/v1/offers/{initial_offer_id}")
     assert response.status_code == 200
-    assert response.json()["compatible"] is True
-    assert response.json()["complete"] is True
+    assert response.json()["retailer"] == "Test Shop"
 
-    # 14–15: review creation and deletion
+    response = client.put(
+        f"/api/v1/offers/{initial_offer_id}",
+        json={
+            "retailer": "Atnaujinta parduotuvė",
+            "price": "389.99",
+            "product_url": "https://example.com/updated-cpu",
+            "in_stock": False,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["in_stock"] is False
+
+    response = client.post(
+        f"/api/v1/components/{component_id}/offers",
+        json={
+            "retailer": "Antra parduotuvė",
+            "price": "379.99",
+            "product_url": "https://example.com/second-cpu",
+            "in_stock": True,
+        },
+    )
+    assert response.status_code == 201
+    offer_id = response.json()["id"]
+
+    # Reviews: list, create, read, update and delete.
     response = client.post(
         f"/api/v1/builds/{build_id}/reviews",
         json={"author_name": "API testas", "rating": 5, "comment": "Veikia puikiai."},
@@ -81,7 +101,30 @@ def test_all_fifteen_operations_and_required_status_codes(client: TestClient) ->
     assert response.status_code == 201
     review_id = response.json()["id"]
 
+    response = client.get(f"/api/v1/builds/{build_id}/reviews")
+    assert response.status_code == 200
+    assert [review["id"] for review in response.json()] == [review_id]
+
+    response = client.get(f"/api/v1/reviews/{review_id}")
+    assert response.status_code == 200
+    assert response.json()["comment"] == "Veikia puikiai."
+
+    response = client.put(
+        f"/api/v1/reviews/{review_id}",
+        json={
+            "author_name": "API testas",
+            "rating": 4,
+            "comment": "Atnaujintas atsiliepimas.",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["rating"] == 4
+    assert response.json()["comment"] == "Atnaujintas atsiliepimas."
+
     response = client.delete(f"/api/v1/reviews/{review_id}")
+    assert response.status_code == 204
+
+    response = client.delete(f"/api/v1/offers/{offer_id}")
     assert response.status_code == 204
 
     response = client.delete(f"/api/v1/builds/{build_id}")
@@ -107,7 +150,7 @@ def test_all_fifteen_operations_and_required_status_codes(client: TestClient) ->
     )
 
 
-def test_openapi_documents_exactly_fifteen_operations(client: TestClient) -> None:
+def test_openapi_documents_four_separate_crud_groups(client: TestClient) -> None:
     response = client.get("/api/openapi.json")
     assert response.status_code == 200
     specification = response.json()
@@ -117,10 +160,21 @@ def test_openapi_documents_exactly_fifteen_operations(client: TestClient) -> Non
         for method, operation in path.items()
         if method in {"get", "post", "put", "patch", "delete"}
     ]
-    assert len(operations) == 15
-    assert len({operation["operationId"] for operation in operations}) == 15
+    assert len(operations) == 20
+    assert len({operation["operationId"] for operation in operations}) == 20
     assert all(operation.get("summary") for operation in operations)
     assert all(operation.get("description") for operation in operations)
+    operations_per_tag: dict[str, int] = {}
+    for operation in operations:
+        for tag in operation["tags"]:
+            operations_per_tag[tag] = operations_per_tag.get(tag, 0) + 1
+    assert operations_per_tag == {
+        "Komponentai": 5,
+        "Komplektai": 5,
+        "Atsiliepimai": 5,
+        "Pardavėjų pasiūlymai": 5,
+    }
+    assert [tag["name"] for tag in specification["tags"]] == list(operations_per_tag)
 
 
 def test_semantic_bad_payload_returns_400(client: TestClient) -> None:

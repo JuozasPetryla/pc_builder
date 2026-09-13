@@ -35,6 +35,14 @@ class OfferRead(BaseModel):
     in_stock: bool
 
 
+class OfferCreate(OfferInput):
+    pass
+
+
+class OfferReplace(OfferInput):
+    pass
+
+
 class ComponentInput(BaseModel):
     category: ComponentCategory
     manufacturer: str = Field(min_length=2, max_length=80, examples=["AMD"])

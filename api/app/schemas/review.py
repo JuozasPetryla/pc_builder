@@ -9,6 +9,10 @@ class ReviewCreate(BaseModel):
     comment: str = Field(min_length=3, max_length=2000)
 
 
+class ReviewReplace(ReviewCreate):
+    """Visas atsiliepimo turinys, naudojamas PUT operacijoje."""
+
+
 class ReviewRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
