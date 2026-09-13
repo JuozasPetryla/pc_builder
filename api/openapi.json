@@ -1,0 +1,1531 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PC Builder API",
+    "description": "REST API kompiuterių komponentų katalogui, komplektams, suderinamumui, kainoms ir atsiliepimams.",
+    "contact": {
+      "name": "Juozas Petryla"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/components": {
+      "get": {
+        "tags": [
+          "Components"
+        ],
+        "summary": "Gauti komponentų katalogą",
+        "description": "Grąžina komponentus su kainomis ir įsigijimo vietomis; galima filtruoti pagal kategoriją.",
+        "operationId": "listComponents",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ComponentCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ComponentRead"
+                  },
+                  "title": "Response Listcomponents"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Components"
+        ],
+        "summary": "Sukurti komponentą",
+        "description": "Sukuria katalogo komponentą kartu su bent viena įsigijimo vieta.",
+        "operationId": "createComponent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Toks komponentas jau egzistuoja.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Neteisingas užklausos turinys arba parametrai."
+          }
+        }
+      }
+    },
+    "/api/v1/components/{component_id}": {
+      "get": {
+        "tags": [
+          "Components"
+        ],
+        "summary": "Gauti komponentą",
+        "description": "Grąžina vieną komponentą, jo techninius duomenis, kainas ir pardavėjus.",
+        "operationId": "getComponent",
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Components"
+        ],
+        "summary": "Atnaujinti komponentą",
+        "description": "Pilnai pakeičia komponento duomenis ir jo įsigijimo vietas.",
+        "operationId": "replaceComponent",
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Toks komponentas jau egzistuoja.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Neteisingas užklausos turinys arba parametrai."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Components"
+        ],
+        "summary": "Pašalinti komponentą",
+        "description": "Pašalina komponentą, jo pasiūlymus ir susiejimus su komplektais.",
+        "operationId": "deleteComponent",
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/builds": {
+      "get": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Gauti komplektų sąrašą",
+        "description": "Grąžina komplektus su dalimis, kaina, atsiliepimais ir suderinamumo būsena.",
+        "operationId": "listBuilds",
+        "parameters": [
+          {
+            "name": "public_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Public Only"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BuildRead"
+                  },
+                  "title": "Response Listbuilds"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Sukurti kompiuterio komplektą",
+        "description": "Sukuria privatų arba viešą komplektą ir pasirinktinai iš karto priskiria komponentus.",
+        "operationId": "createBuild",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Komplekte kartojasi komponento kategorija.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Neteisingas užklausos turinys."
+          }
+        }
+      }
+    },
+    "/api/v1/builds/{build_id}": {
+      "get": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Gauti komplektą",
+        "description": "Grąžina komplekto viešą informaciją, dalis, įsigijimo vietas, kainą ir atsiliepimus.",
+        "operationId": "getBuild",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Atnaujinti komplektą",
+        "description": "Pilnai pakeičia komplekto metaduomenis, viešumo būseną ir komponentų sąrašą.",
+        "operationId": "replaceBuild",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuildReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Neteisingas turinys."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Pašalinti komplektą",
+        "description": "Pašalina komplektą, jo komponentų susiejimus ir atsiliepimus.",
+        "operationId": "deleteBuild",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/builds/{build_id}/components/{component_id}": {
+      "put": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Pridėti arba pakeisti komplekto komponentą",
+        "description": "Idempotentiškai prideda komponentą; tos pačios kategorijos dalis pakeičiama.",
+        "operationId": "setBuildComponent",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          },
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Pašalinti komponentą iš komplekto",
+        "description": "Pašalina tik komponento susiejimą; katalogo komponentas lieka duomenų bazėje.",
+        "operationId": "removeBuildComponent",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          },
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/builds/{build_id}/compatibility": {
+      "get": {
+        "tags": [
+          "Builds"
+        ],
+        "summary": "Patikrinti komplekto suderinamumą ir kainą",
+        "description": "Tikrina lizdą, RAM tipą, korpuso formatą, GPU dydį, PSU galią ir aušintuvą; suskaičiuoja mažiausią kainą.",
+        "operationId": "checkBuildCompatibility",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompatibilityRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komplektas arba komponentas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/builds/{build_id}/reviews": {
+      "post": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Įvertinti ir pakomentuoti komplektą",
+        "description": "Prideda 1–5 balų įvertinimą ir tekstinį komentarą prie komplekto.",
+        "operationId": "createBuildReview",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Build Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Komplektas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Neteisingas įvertinimas arba komentaras."
+          }
+        }
+      }
+    },
+    "/api/v1/reviews/{review_id}": {
+      "delete": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Pašalinti atsiliepimą",
+        "description": "Pašalina komplekto įvertinimą ir komentarą.",
+        "operationId": "deleteReview",
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Review Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Atsiliepimas nerastas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BuildCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Name",
+            "examples": [
+              "1440p Gaming PC"
+            ]
+          },
+          "owner_name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Owner Name",
+            "examples": [
+              "Juozas"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          },
+          "component_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Component Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "owner_name"
+        ],
+        "title": "BuildCreate"
+      },
+      "BuildRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "owner_name": {
+            "type": "string",
+            "title": "Owner Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentRead"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewRead"
+            },
+            "type": "array",
+            "title": "Reviews"
+          },
+          "compatibility": {
+            "$ref": "#/components/schemas/CompatibilityRead"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "owner_name",
+          "description",
+          "is_public",
+          "components",
+          "reviews",
+          "compatibility",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BuildRead"
+      },
+      "BuildReplace": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Name",
+            "examples": [
+              "1440p Gaming PC"
+            ]
+          },
+          "owner_name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Owner Name",
+            "examples": [
+              "Juozas"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          },
+          "component_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Component Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "owner_name"
+        ],
+        "title": "BuildReplace"
+      },
+      "CompatibilityIssue": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "component_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Component Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "component_ids"
+        ],
+        "title": "CompatibilityIssue"
+      },
+      "CompatibilityRead": {
+        "properties": {
+          "build_id": {
+            "type": "integer",
+            "title": "Build Id"
+          },
+          "compatible": {
+            "type": "boolean",
+            "title": "Compatible"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "total_price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Price"
+          },
+          "missing_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Categories"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/CompatibilityIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "build_id",
+          "compatible",
+          "complete",
+          "total_price",
+          "missing_categories",
+          "issues"
+        ],
+        "title": "CompatibilityRead"
+      },
+      "ComponentCategory": {
+        "type": "string",
+        "enum": [
+          "cpu",
+          "motherboard",
+          "memory",
+          "gpu",
+          "storage",
+          "psu",
+          "case",
+          "cooler"
+        ],
+        "title": "ComponentCategory"
+      },
+      "ComponentCreate": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/ComponentCategory"
+          },
+          "manufacturer": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Manufacturer",
+            "examples": [
+              "AMD"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Model",
+            "examples": [
+              "Ryzen 7 7800X3D"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "specifications": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Specifications"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/OfferInput"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Offers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "manufacturer",
+          "model",
+          "specifications",
+          "offers"
+        ],
+        "title": "ComponentCreate"
+      },
+      "ComponentRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ComponentCategory"
+          },
+          "manufacturer": {
+            "type": "string",
+            "title": "Manufacturer"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "specifications": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Specifications"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/OfferRead"
+            },
+            "type": "array",
+            "title": "Offers"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "manufacturer",
+          "model",
+          "description",
+          "specifications",
+          "offers",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ComponentRead"
+      },
+      "ComponentReplace": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/ComponentCategory"
+          },
+          "manufacturer": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Manufacturer",
+            "examples": [
+              "AMD"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Model",
+            "examples": [
+              "Ryzen 7 7800X3D"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "specifications": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Specifications"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/OfferInput"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Offers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "manufacturer",
+          "model",
+          "specifications",
+          "offers"
+        ],
+        "title": "ComponentReplace"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "OfferInput": {
+        "properties": {
+          "retailer": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Retailer",
+            "examples": [
+              "Kilobaitas"
+            ]
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)"
+              }
+            ],
+            "title": "Price",
+            "examples": [
+              299.99
+            ]
+          },
+          "product_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Product Url"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "retailer",
+          "price",
+          "product_url"
+        ],
+        "title": "OfferInput"
+      },
+      "OfferRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "retailer": {
+            "type": "string",
+            "title": "Retailer"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price"
+          },
+          "product_url": {
+            "type": "string",
+            "title": "Product Url"
+          },
+          "in_stock": {
+            "type": "boolean",
+            "title": "In Stock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "retailer",
+          "price",
+          "product_url",
+          "in_stock"
+        ],
+        "title": "OfferRead"
+      },
+      "ReviewCreate": {
+        "properties": {
+          "author_name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Author Name",
+            "examples": [
+              "Mantas"
+            ]
+          },
+          "rating": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "examples": [
+              5
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Comment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "author_name",
+          "rating",
+          "comment"
+        ],
+        "title": "ReviewCreate"
+      },
+      "ReviewRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "build_id": {
+            "type": "integer",
+            "title": "Build Id"
+          },
+          "author_name": {
+            "type": "string",
+            "title": "Author Name"
+          },
+          "rating": {
+            "type": "integer",
+            "title": "Rating"
+          },
+          "comment": {
+            "type": "string",
+            "title": "Comment"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "build_id",
+          "author_name",
+          "rating",
+          "comment",
+          "created_at"
+        ],
+        "title": "ReviewRead"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

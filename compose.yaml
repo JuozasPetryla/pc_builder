@@ -1,0 +1,88 @@
+name: pc-builder
+
+services:
+  web:
+    build:
+      context: ./web
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pc_builder}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-pc_builder}
+      CORS_ORIGINS: '["http://localhost:${WEB_PORT:-8080}"]'
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pc_builder}
+      POSTGRES_USER: ${POSTGRES_USER:-pc_builder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  demo:
+    image: postman/newman:6-alpine
+    profiles: ["demo"]
+    volumes:
+      - ./postman:/etc/newman:ro
+    command:
+      [
+        "run",
+        "/etc/newman/PC_Builder_API.postman_collection.json",
+        "--env-var",
+        "baseUrl=http://api:8000",
+        "--reporters",
+        "cli",
+      ]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api-test:
+    build:
+      context: ./api
+      target: test
+    profiles: ["test"]
+
+volumes:
+  postgres_data:

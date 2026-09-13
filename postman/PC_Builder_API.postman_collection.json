@@ -1,0 +1,141 @@
+{
+  "info": {
+    "_postman_id": "f3be0a32-7b47-4e08-9a66-pcbuilderdemo",
+    "name": "PC Builder API – 15 metodų demonstracija",
+    "description": "Patikrina visus 15 REST metodų ir privalomus 400, 404, 422, 201 bei 204 scenarijus. Skirta vykdyti su Newman prieš naujai migruotą arba jau veikiančią demonstracinę DB.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "componentId", "value": "" },
+    { "key": "buildId", "value": "" },
+    { "key": "reviewId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 GET komponentų katalogą",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/components" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 JSON', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'); pm.expect(pm.response.json().length).to.be.above(0); });"] } }]
+    },
+    {
+      "name": "02 POST sukurti komponentą – 201",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"category\": \"cpu\",\n  \"manufacturer\": \"Demo {{$guid}}\",\n  \"model\": \"API procesorius\",\n  \"description\": \"Postman demonstracijos komponentas.\",\n  \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 105},\n  \"offers\": [{\"retailer\": \"Demo parduotuvė\", \"price\": 299.99, \"product_url\": \"https://example.com/demo-cpu\", \"in_stock\": true}]\n}" },
+        "url": "{{baseUrl}}/api/v1/components"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('componentId', pm.response.json().id);"] } }]
+    },
+    {
+      "name": "03 GET vieną komponentą",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/components/{{componentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 ir teisingas ID', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('componentId'))); });"] } }]
+    },
+    {
+      "name": "04 PUT atnaujinti komponentą",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"category\": \"cpu\",\n  \"manufacturer\": \"Demo atnaujintas {{$guid}}\",\n  \"model\": \"API procesorius\",\n  \"description\": \"Atnaujinta per PUT.\",\n  \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 105},\n  \"offers\": [{\"retailer\": \"Demo parduotuvė\", \"price\": 289.99, \"product_url\": \"https://example.com/demo-cpu\", \"in_stock\": true}]\n}" },
+        "url": "{{baseUrl}}/api/v1/components/{{componentId}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 ir pakeista kaina', () => { pm.response.to.have.status(200); pm.expect(Number(pm.response.json().offers[0].price)).to.eql(289.99); });"] } }]
+    },
+    {
+      "name": "05 GET komplektų sąrašą",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/builds?public_only=true" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200, suderinamas ir nesuderinamas pavyzdžiai', () => { pm.response.to.have.status(200); const builds=pm.response.json(); pm.expect(builds.length).to.be.at.least(2); pm.expect(builds.some(b => b.compatibility.compatible === true)).to.eql(true); pm.expect(builds.some(b => b.compatibility.compatible === false)).to.eql(true); });"] } }]
+    },
+    {
+      "name": "06 POST sukurti komplektą – 201",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\": \"Postman demonstracijos PC\", \"owner_name\": \"Juozas\", \"description\": \"Automatiškai sukurtas komplektas.\", \"is_public\": false, \"component_ids\": []}" },
+        "url": "{{baseUrl}}/api/v1/builds"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('buildId', pm.response.json().id);"] } }]
+    },
+    {
+      "name": "07 GET vieną komplektą",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/builds/{{buildId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 ir kainos/suderinamumo laukai', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.have.property('compatibility'); });"] } }]
+    },
+    {
+      "name": "08 PUT atnaujinti komplektą",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\": \"Pilnas Postman PC\", \"owner_name\": \"Juozas\", \"description\": \"Viešas ir suderinamas komplektas.\", \"is_public\": true, \"component_ids\": [1,2,3,4,5,6,7,8]}" },
+        "url": "{{baseUrl}}/api/v1/builds/{{buildId}}"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 ir komplektas viešas', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().is_public).to.eql(true); });"] } }]
+    },
+    {
+      "name": "09 PUT pridėti/pakeisti komplekto dalį",
+      "request": { "method": "PUT", "url": "{{baseUrl}}/api/v1/builds/{{buildId}}/components/{{componentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 ir naujas CPU priskirtas', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().components.some(c => c.id === Number(pm.collectionVariables.get('componentId')))).to.eql(true); });"] } }]
+    },
+    {
+      "name": "10 DELETE pašalinti komplekto dalį – 204",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/builds/{{buildId}}/components/{{componentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('204 No Content', () => { pm.response.to.have.status(204); pm.expect(pm.response.text()).to.eql(''); });"] } }]
+    },
+    {
+      "name": "11 GET patikrinti suderinamumą ir kainą",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/builds/1/compatibility" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200, pilnas ir suderinamas', () => { pm.response.to.have.status(200); const r=pm.response.json(); pm.expect(r.compatible).to.eql(true); pm.expect(r.complete).to.eql(true); pm.expect(Number(r.total_price)).to.be.above(0); });"] } }]
+    },
+    {
+      "name": "12 POST sukurti atsiliepimą – 201",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"author_name\": \"Postman\", \"rating\": 5, \"comment\": \"Automatinė demonstracija veikia.\"}" },
+        "url": "{{baseUrl}}/api/v1/builds/{{buildId}}/reviews"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('reviewId', pm.response.json().id);"] } }]
+    },
+    {
+      "name": "13 DELETE pašalinti atsiliepimą – 204",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/reviews/{{reviewId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"] } }]
+    },
+    {
+      "name": "14 DELETE pašalinti komplektą – 204",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/builds/{{buildId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"] } }]
+    },
+    {
+      "name": "15 DELETE pašalinti komponentą – 204",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/components/{{componentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"] } }]
+    },
+    {
+      "name": "Klaida: neegzistuojantis resursas – 404",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/components/999999" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('404 Not Found', () => pm.response.to.have.status(404));"] } }]
+    },
+    {
+      "name": "Klaida: neteisingas payload – 422",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"author_name\": \"X\", \"rating\": 9, \"comment\": \"ne\"}" },
+        "url": "{{baseUrl}}/api/v1/builds/1/reviews"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('422 Unprocessable Entity', () => pm.response.to.have.status(422));"] } }]
+    },
+    {
+      "name": "Klaida: dvi tos pačios kategorijos dalys – 400",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\": \"Blogas komplektas\", \"owner_name\": \"Postman\", \"component_ids\": [1,9]}" },
+        "url": "{{baseUrl}}/api/v1/builds"
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('400 Bad Request', () => pm.response.to.have.status(400));"] } }]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+from collections.abc import Generator
+from datetime import UTC, datetime
+from decimal import Decimal
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.db.base import Base
+from app.db.session import get_db
+from app.main import app
+from app.models.domain import Build, Component, RetailOffer, Review
+
+
+@pytest.fixture()
+def db() -> Generator[Session]:
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    @event.listens_for(engine, "connect")
+    def enable_foreign_keys(dbapi_connection, _connection_record) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with session_factory() as session:
+        yield session
+    Base.metadata.drop_all(engine)
+    engine.dispose()
+
+
+@pytest.fixture()
+def seeded_db(db: Session) -> Session:
+    component_data = [
+        ("cpu", "AMD", "Ryzen 7 7800X3D", {"socket": "AM5", "cores": 8, "tdp_watts": 120}),
+        (
+            "motherboard",
+            "MSI",
+            "MAG B650",
+            {"socket": "AM5", "memory_type": "DDR5", "form_factor": "ATX"},
+        ),
+        ("memory", "Kingston", "FURY 32GB", {"memory_type": "DDR5", "capacity_gb": 32}),
+        ("gpu", "ASUS", "RTX 4070 SUPER", {"length_mm": 267, "recommended_psu_watts": 650}),
+        ("storage", "Samsung", "990 PRO 2TB", {"capacity_gb": 2000, "interface": "NVMe"}),
+        ("psu", "Corsair", "RM750e", {"wattage": 750}),
+        ("case", "Fractal", "North", {"supported_form_factors": ["ATX"], "max_gpu_length_mm": 355}),
+        ("cooler", "Noctua", "NH-D15", {"supported_sockets": ["AM5"], "tdp_capacity_watts": 220}),
+        ("cpu", "Intel", "Core i5-14600K", {"socket": "LGA1700", "cores": 14, "tdp_watts": 181}),
+    ]
+    components = []
+    for index, (category, manufacturer, model, specifications) in enumerate(
+        component_data, start=1
+    ):
+        component = Component(
+            id=index,
+            category=category,
+            manufacturer=manufacturer,
+            model=model,
+            specifications=specifications,
+            offers=[
+                RetailOffer(
+                    retailer="Demo parduotuvė",
+                    price=Decimal("100.00") + index,
+                    product_url=f"https://example.com/{index}",
+                    in_stock=True,
+                )
+            ],
+        )
+        components.append(component)
+        db.add(component)
+    build = Build(
+        id=1,
+        name="Testinis komplektas",
+        owner_name="Testuotojas",
+        is_public=True,
+        components=components[:8],
+    )
+    db.add(build)
+    db.add(
+        Review(
+            id=1,
+            build=build,
+            author_name="Vertintojas",
+            rating=5,
+            comment="Puikus komplektas.",
+            created_at=datetime.now(UTC),
+        )
+    )
+    db.commit()
+    return db
+
+
+@pytest.fixture()
+def client(seeded_db: Session) -> Generator[TestClient]:
+    def override_get_db() -> Generator[Session]:
+        yield seeded_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    test_client = TestClient(app)
+    yield test_client
+    test_client.close()
+    app.dependency_overrides.clear()
