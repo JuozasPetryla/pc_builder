@@ -1,24 +1,19 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field
 
+from app.schemas.common import ApiInput
 from app.schemas.component import ComponentRead
 from app.schemas.review import ReviewRead
 
 
-class BuildInput(BaseModel):
+class BuildInput(ApiInput):
     name: str = Field(min_length=3, max_length=120, examples=["1440p Gaming PC"])
     owner_name: str = Field(min_length=2, max_length=80, examples=["Juozas"])
     description: str | None = Field(default=None, max_length=2000)
-    is_public: bool = False
-    component_ids: list[int] = Field(default_factory=list, max_length=8)
-
-    @field_validator("component_ids")
-    @classmethod
-    def component_ids_must_be_unique(cls, value: list[int]) -> list[int]:
-        if len(value) != len(set(value)):
-            raise ValueError("component_ids must be unique")
-        return value
+    is_public: bool = Field(
+        default=False, description="Viešumo žyma sąrašo filtravimui, ne prieigos kontrolė."
+    )
 
 
 class BuildCreate(BuildInput):
@@ -30,8 +25,6 @@ class BuildReplace(BuildInput):
 
 
 class BuildRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
     owner_name: str
@@ -41,3 +34,10 @@ class BuildRead(BaseModel):
     reviews: list[ReviewRead]
     created_at: datetime
     updated_at: datetime
+    links: "BuildLinks"
+
+
+class BuildLinks(BaseModel):
+    self: str
+    components: str
+    reviews: str

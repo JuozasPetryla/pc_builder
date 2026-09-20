@@ -1,140 +1,125 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
+from app.api.presenters import component_to_read
+from app.api.routes.builds import get_build_or_404
 from app.db.session import get_db
-from app.models.domain import Component, ComponentCategory, RetailOffer
+from app.models.domain import Component, ComponentCategory
 from app.schemas.common import ErrorResponse
 from app.schemas.component import ComponentCreate, ComponentRead, ComponentReplace
 
-router = APIRouter(prefix="/components", tags=["Komponentai"])
-ERROR_RESPONSES = {
-    404: {"model": ErrorResponse, "description": "Komponentas nerastas."},
-    409: {"model": ErrorResponse, "description": "Toks komponentas jau egzistuoja."},
-    422: {"description": "Neteisingas užklausos turinys arba parametrai."},
+router = APIRouter(tags=["Komponentai"])
+NOT_FOUND = {
+    404: {"model": ErrorResponse, "description": "Komplektas arba jo komponentas nerastas."}
+}
+CONFLICT = {
+    409: {"model": ErrorResponse, "description": "Komplekte jau yra šios kategorijos komponentas."}
 }
 
 
-def _get_component(db: Session, component_id: int) -> Component:
-    component = db.scalar(
-        select(Component)
-        .where(Component.id == component_id)
-        .options(selectinload(Component.offers))
-    )
-    if component is None:
-        raise HTTPException(status_code=404, detail="Komponentas nerastas.")
+def get_component_or_404(
+    db: Session, component_id: int, *, build_id: int | None = None
+) -> Component:
+    component = db.get(Component, component_id)
+    if component is None or (build_id is not None and component.build_id != build_id):
+        raise HTTPException(status_code=404, detail="Komplekto komponentas nerastas.")
     return component
 
 
-def _new_offers(payload: ComponentCreate | ComponentReplace) -> list[RetailOffer]:
+def _commit_component(db: Session) -> None:
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="Komplekte jau yra šios kategorijos komponentas."
+        ) from exc
+
+
+@router.get(
+    "/builds/{build_id}/components",
+    response_model=list[ComponentRead],
+    operation_id="listBuildComponents",
+    summary="Gauti komplekto komponentus",
+    description="Puslapiuojamas konkretaus komplekto komponentų sąrašas su kategorijos filtru.",
+    responses=NOT_FOUND,
+)
+def list_components(
+    build_id: int,
+    category: ComponentCategory | None = None,
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0, le=2_147_483_647),
+    db: Session = Depends(get_db),
+) -> list[ComponentRead]:
+    get_build_or_404(db, build_id)
+    query = select(Component).where(Component.build_id == build_id).order_by(Component.id)
+    if category is not None:
+        query = query.where(Component.category == category.value)
     return [
-        RetailOffer(
-            retailer=offer.retailer,
-            price=offer.price,
-            product_url=str(offer.product_url),
-            in_stock=offer.in_stock,
-        )
-        for offer in payload.offers
+        component_to_read(component) for component in db.scalars(query.offset(offset).limit(limit))
     ]
 
 
-@router.get(
-    "",
-    response_model=list[ComponentRead],
-    operation_id="listComponents",
-    summary="Gauti komponentų katalogą",
-    description="Grąžina komponentus su kainomis ir įsigijimo vietomis; galima filtruoti pagal kategoriją.",
-)
-def list_components(
-    category: ComponentCategory | None = None,
-    limit: int = Query(default=100, ge=1, le=200),
-    offset: int = Query(default=0, ge=0),
-    db: Session = Depends(get_db),
-) -> list[Component]:
-    query = select(Component).options(selectinload(Component.offers)).order_by(Component.id)
-    if category is not None:
-        query = query.where(Component.category == category.value)
-    return list(db.scalars(query.offset(offset).limit(limit)).all())
-
-
 @router.post(
-    "",
+    "/builds/{build_id}/components",
     response_model=ComponentRead,
     status_code=status.HTTP_201_CREATED,
-    operation_id="createComponent",
-    summary="Sukurti komponentą",
-    description="Sukuria katalogo komponentą kartu su bent viena įsigijimo vieta.",
-    responses=ERROR_RESPONSES,
+    operation_id="createBuildComponent",
+    summary="Sukurti komplekto komponentą",
+    description="Sukuria tik šiam komplektui priklausantį komponentą. Kategorija komplekte nesikartoja.",
+    responses={**NOT_FOUND, **CONFLICT},
 )
-def create_component(payload: ComponentCreate, db: Session = Depends(get_db)) -> Component:
-    component = Component(
-        category=payload.category.value,
-        manufacturer=payload.manufacturer,
-        model=payload.model,
-        description=payload.description,
-        specifications=payload.specifications,
-        offers=_new_offers(payload),
-    )
+def create_component(
+    build_id: int, payload: ComponentCreate, db: Session = Depends(get_db)
+) -> ComponentRead:
+    get_build_or_404(db, build_id)
+    component = Component(build_id=build_id, **payload.model_dump())
     db.add(component)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Toks komponentas jau egzistuoja.") from exc
-    return _get_component(db, component.id)
+    _commit_component(db)
+    return component_to_read(component)
 
 
 @router.get(
-    "/{component_id}",
+    "/components/{component_id}",
     response_model=ComponentRead,
     operation_id="getComponent",
-    summary="Gauti komponentą",
-    description="Grąžina vieną komponentą, jo techninius duomenis, kainas ir pardavėjus.",
-    responses={404: ERROR_RESPONSES[404]},
+    summary="Gauti komplekto komponentą",
+    description="Grąžina komponentą pagal unikalų ID. Jo komplektas nurodytas build_id ir links.build.",
+    responses=NOT_FOUND,
 )
-def get_component(component_id: int, db: Session = Depends(get_db)) -> Component:
-    return _get_component(db, component_id)
+def get_component(component_id: int, db: Session = Depends(get_db)) -> ComponentRead:
+    return component_to_read(get_component_or_404(db, component_id))
 
 
 @router.put(
-    "/{component_id}",
+    "/components/{component_id}",
     response_model=ComponentRead,
     operation_id="replaceComponent",
-    summary="Atnaujinti komponentą",
-    description="Pilnai pakeičia komponento duomenis ir jo įsigijimo vietas.",
-    responses=ERROR_RESPONSES,
+    summary="Atnaujinti komplekto komponentą",
+    description="Pakeičia komponento duomenis, nekeisdamas jo komplekto ar pasiūlymų.",
+    responses={**NOT_FOUND, **CONFLICT},
 )
 def replace_component(
     component_id: int, payload: ComponentReplace, db: Session = Depends(get_db)
-) -> Component:
-    component = _get_component(db, component_id)
-    component.category = payload.category.value
-    component.manufacturer = payload.manufacturer
-    component.model = payload.model
-    component.description = payload.description
-    component.specifications = payload.specifications
-    component.offers.clear()
-    db.flush()
-    component.offers = _new_offers(payload)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Toks komponentas jau egzistuoja.") from exc
-    return _get_component(db, component_id)
+) -> ComponentRead:
+    component = get_component_or_404(db, component_id)
+    for field, value in payload.model_dump().items():
+        setattr(component, field, value)
+    _commit_component(db)
+    return component_to_read(component)
 
 
 @router.delete(
-    "/{component_id}",
+    "/components/{component_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteComponent",
-    summary="Pašalinti komponentą",
-    description="Pašalina komponentą, jo pasiūlymus ir susiejimus su komplektais.",
-    responses={404: ERROR_RESPONSES[404]},
+    summary="Pašalinti komplekto komponentą",
+    description="Pašalina šio komplekto komponentą ir jo pasiūlymus; kitų komplektų neliečia.",
+    responses=NOT_FOUND,
 )
 def delete_component(component_id: int, db: Session = Depends(get_db)) -> Response:
-    component = _get_component(db, component_id)
-    db.delete(component)
+    db.delete(get_component_or_404(db, component_id))
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

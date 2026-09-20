@@ -1,17 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import settings
 
 OPENAPI_TAGS = [
     {
-        "name": "Komponentai",
-        "description": "Komponento su specifikacijomis CRUD ir katalogo sąrašas.",
-    },
-    {
         "name": "Komplektai",
         "description": "Kompiuterio komplekto CRUD ir visų komplektų sąrašas.",
+    },
+    {
+        "name": "Komponentai",
+        "description": "Konkrečiam komplektui priklausančių komponentų CRUD ir sąrašas.",
     },
     {
         "name": "Atsiliepimai",
@@ -21,25 +23,34 @@ OPENAPI_TAGS = [
     },
     {
         "name": "Pardavėjų pasiūlymai",
-        "description": (
-            "Komponento pardavėjų pasiūlymų CRUD ir konkretaus komponento pasiūlymų sąrašas."
-        ),
+        "description": ("Komplekto komponento pardavėjų pasiūlymų CRUD ir trijų lygių sąrašas."),
     },
 ]
 
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    description=(
-        "REST API kompiuterių komponentų katalogui, komplektams, "
-        "suderinamumui, kainoms ir atsiliepimams."
-    ),
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
     contact={"name": "Juozas Petryla"},
     openapi_tags=OPENAPI_TAGS,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_response(_request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Echoing invalid input (e.g. NaN or a lone Unicode surrogate) would itself
+    # fail JSON serialization. Keep the documented location/message/type only.
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": [
+                {key: error[key] for key in ("loc", "msg", "type")} for error in exc.errors()
+            ]
+        },
+    )
+
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,197 +1,90 @@
 from fastapi.testclient import TestClient
 
+BUILD_PAYLOAD = {
+    "name": "API testų komplektas",
+    "owner_name": "Testuotojas",
+    "description": "Testinis PC.",
+    "is_public": False,
+}
 COMPONENT_PAYLOAD = {
     "category": "cpu",
     "manufacturer": "Intel",
     "model": "Core Ultra 7 Demo",
     "description": "Testinis procesorius.",
     "specifications": {"socket": "LGA1851", "cores": 20, "tdp_watts": 125},
-    "offers": [
-        {
-            "retailer": "Test Shop",
-            "price": "399.99",
-            "product_url": "https://example.com/cpu",
-            "in_stock": True,
-        }
-    ],
 }
+OFFER_PAYLOAD = {
+    "retailer": "Test Shop",
+    "price": "399.99",
+    "product_url": "https://example.com/cpu",
+    "in_stock": True,
+}
+REVIEW_PAYLOAD = {"author_name": "Testuotojas", "rating": 5, "comment": "Puikus komplektas."}
 
 
-def test_all_core_operations_and_required_status_codes(client: TestClient) -> None:
-    # 1–5: components CRUD
-    response = client.get("/api/v1/components")
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("application/json")
-    assert len(response.json()) == 9
-
-    response = client.post("/api/v1/components", json=COMPONENT_PAYLOAD)
+def test_all_crud_operations(client: TestClient) -> None:
+    response = client.post("/api/v1/builds", json=BUILD_PAYLOAD)
     assert response.status_code == 201
-    component_id = response.json()["id"]
+    build = response.json()
+    build_url = build["links"]["self"]
+    components_url = build["links"]["components"]
+    assert client.get("/api/v1/builds").status_code == 200
+    assert client.get(build_url).status_code == 200
+    assert (
+        client.put(build_url, json={**BUILD_PAYLOAD, "is_public": True}).json()["is_public"] is True
+    )
 
-    response = client.get(f"/api/v1/components/{component_id}")
-    assert response.status_code == 200
-
-    replacement = {**COMPONENT_PAYLOAD, "description": "Atnaujintas aprašymas."}
-    response = client.put(f"/api/v1/components/{component_id}", json=replacement)
-    assert response.status_code == 200
-    assert response.json()["description"] == "Atnaujintas aprašymas."
-
-    # 6–10: builds CRUD
-    response = client.get("/api/v1/builds")
-    assert response.status_code == 200
-
-    build_payload = {
-        "name": "API testų komplektas",
-        "owner_name": "Testuotojas",
-        "description": "Sukurtas automatiniu testu.",
-        "is_public": False,
-        "component_ids": [],
-    }
-    response = client.post("/api/v1/builds", json=build_payload)
+    response = client.post(components_url, json=COMPONENT_PAYLOAD)
     assert response.status_code == 201
-    build_id = response.json()["id"]
-
-    response = client.get(f"/api/v1/builds/{build_id}")
-    assert response.status_code == 200
-
-    replacement_build = {**build_payload, "is_public": True, "component_ids": list(range(1, 9))}
-    response = client.put(f"/api/v1/builds/{build_id}", json=replacement_build)
-    assert response.status_code == 200
-    assert len(response.json()["components"]) == 8
-
-    # Retail offers CRUD: Component -> RetailOffer hierarchy.
-    initial_offer_id = client.get(f"/api/v1/components/{component_id}").json()["offers"][0]["id"]
-    response = client.get(f"/api/v1/components/{component_id}/offers")
-    assert response.status_code == 200
-    assert [offer["id"] for offer in response.json()] == [initial_offer_id]
-
-    response = client.get(f"/api/v1/offers/{initial_offer_id}")
-    assert response.status_code == 200
-    assert response.json()["retailer"] == "Test Shop"
-
+    component = response.json()
+    assert component["build_id"] == build["id"]
+    component_url = component["links"]["self"]
+    assert client.get(components_url).json()[0]["id"] == component["id"]
+    assert client.get(component_url).status_code == 200
     response = client.put(
-        f"/api/v1/offers/{initial_offer_id}",
-        json={
-            "retailer": "Atnaujinta parduotuvė",
-            "price": "389.99",
-            "product_url": "https://example.com/updated-cpu",
-            "in_stock": False,
-        },
+        component_url, json={**COMPONENT_PAYLOAD, "description": "Atnaujintas procesorius."}
     )
     assert response.status_code == 200
+    assert response.json()["description"] == "Atnaujintas procesorius."
+
+    offers_url = component["links"]["offers"]
+    response = client.post(offers_url, json=OFFER_PAYLOAD)
+    assert response.status_code == 201
+    offer = response.json()
+    assert offer["component_id"] == component["id"]
+    offer_url = offer["links"]["self"]
+    assert client.get(offers_url).json()[0]["id"] == offer["id"]
+    assert client.get(offer_url).status_code == 200
+    response = client.put(offer_url, json={**OFFER_PAYLOAD, "price": "379.99", "in_stock": False})
+    assert response.status_code == 200
+    assert response.json()["price"] == "379.99"
     assert response.json()["in_stock"] is False
 
-    response = client.post(
-        f"/api/v1/components/{component_id}/offers",
-        json={
-            "retailer": "Antra parduotuvė",
-            "price": "379.99",
-            "product_url": "https://example.com/second-cpu",
-            "in_stock": True,
-        },
-    )
+    reviews_url = build["links"]["reviews"]
+    response = client.post(reviews_url, json=REVIEW_PAYLOAD)
     assert response.status_code == 201
-    offer_id = response.json()["id"]
+    review_url = response.json()["links"]["self"]
+    assert len(client.get(reviews_url).json()) == 1
+    assert client.get(review_url).status_code == 200
+    assert client.put(review_url, json={**REVIEW_PAYLOAD, "rating": 4}).json()["rating"] == 4
 
-    # Reviews: list, create, read, update and delete.
-    response = client.post(
-        f"/api/v1/builds/{build_id}/reviews",
-        json={"author_name": "API testas", "rating": 5, "comment": "Veikia puikiai."},
-    )
-    assert response.status_code == 201
-    review_id = response.json()["id"]
-
-    response = client.get(f"/api/v1/builds/{build_id}/reviews")
-    assert response.status_code == 200
-    assert [review["id"] for review in response.json()] == [review_id]
-
-    response = client.get(f"/api/v1/reviews/{review_id}")
-    assert response.status_code == 200
-    assert response.json()["comment"] == "Veikia puikiai."
-
-    response = client.put(
-        f"/api/v1/reviews/{review_id}",
-        json={
-            "author_name": "API testas",
-            "rating": 4,
-            "comment": "Atnaujintas atsiliepimas.",
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()["rating"] == 4
-    assert response.json()["comment"] == "Atnaujintas atsiliepimas."
-
-    response = client.delete(f"/api/v1/reviews/{review_id}")
-    assert response.status_code == 204
-
-    response = client.delete(f"/api/v1/offers/{offer_id}")
-    assert response.status_code == 204
-
-    response = client.delete(f"/api/v1/builds/{build_id}")
-    assert response.status_code == 204
-    response = client.delete(f"/api/v1/components/{component_id}")
-    assert response.status_code == 204
-
-    # Explicit assessment error cases.
-    assert client.get("/api/v1/components/999999").status_code == 404
-    assert (
-        client.post(
-            "/api/v1/builds/1/reviews",
-            json={"author_name": "X", "rating": 9, "comment": "no"},
-        ).status_code
-        == 422
-    )
-    assert (
-        client.post(
-            "/api/v1/builds",
-            json={**build_payload, "component_ids": [1, 9]},
-        ).status_code
-        == 400
-    )
+    composed = client.get(build_url).json()
+    assert composed["components"][0]["offers"][0]["id"] == offer["id"]
+    assert composed["reviews"][0]["rating"] == 4
+    for url in (review_url, offer_url, component_url, build_url):
+        response = client.delete(url)
+        assert response.status_code == 204
+        assert response.content == b""
+        assert client.get(url).status_code == 404
 
 
-def test_openapi_documents_four_separate_crud_groups(client: TestClient) -> None:
-    response = client.get("/api/openapi.json")
-    assert response.status_code == 200
-    specification = response.json()
-    operations = [
-        operation
-        for path in specification["paths"].values()
-        for method, operation in path.items()
-        if method in {"get", "post", "put", "patch", "delete"}
-    ]
+def test_openapi_documents_four_crud_groups(client: TestClient) -> None:
+    specification = client.get("/api/openapi.json").json()
+    operations = [op for methods in specification["paths"].values() for op in methods.values()]
     assert len(operations) == 20
-    assert len({operation["operationId"] for operation in operations}) == 20
-    assert all(operation.get("summary") for operation in operations)
-    assert all(operation.get("description") for operation in operations)
-    operations_per_tag: dict[str, int] = {}
-    for operation in operations:
-        for tag in operation["tags"]:
-            operations_per_tag[tag] = operations_per_tag.get(tag, 0) + 1
-    assert operations_per_tag == {
-        "Komponentai": 5,
-        "Komplektai": 5,
-        "Atsiliepimai": 5,
-        "Pardavėjų pasiūlymai": 5,
-    }
-    assert [tag["name"] for tag in specification["tags"]] == list(operations_per_tag)
-
-
-def test_semantic_bad_payload_returns_400(client: TestClient) -> None:
-    response = client.post(
-        "/api/v1/builds",
-        json={
-            "name": "Blogas komplektas",
-            "owner_name": "Testuotojas",
-            "component_ids": [1, 9],
-        },
-    )
-    assert response.status_code == 400
-
-
-def test_structurally_bad_payload_returns_422(client: TestClient) -> None:
-    response = client.post(
-        "/api/v1/builds/1/reviews",
-        json={"author_name": "X", "rating": 9, "comment": "no"},
-    )
-    assert response.status_code == 422
+    assert len({op["operationId"] for op in operations}) == 20
+    assert all(op.get("summary") and op.get("description") for op in operations)
+    for tag in ("Komplektai", "Komponentai", "Atsiliepimai", "Pardavėjų pasiūlymai"):
+        assert sum(tag in op["tags"] for op in operations) == 5
+    assert "/api/v1/builds/{build_id}/components/{component_id}/offers" in specification["paths"]
+    assert not any("categories" in path for path in specification["paths"])

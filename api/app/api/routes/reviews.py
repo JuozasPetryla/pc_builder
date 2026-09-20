@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.presenters import review_to_read
 from app.api.routes.builds import get_build_or_404
 from app.db.session import get_db
 from app.models.domain import Review
@@ -34,10 +35,11 @@ def _get_review(db: Session, review_id: int) -> Review:
 )
 def list_build_reviews(
     build_id: int,
+    rating: int | None = Query(default=None, ge=1, le=5),
     limit: int = Query(default=100, ge=1, le=200),
-    offset: int = Query(default=0, ge=0),
+    offset: int = Query(default=0, ge=0, le=2_147_483_647),
     db: Session = Depends(get_db),
-) -> list[Review]:
+) -> list[ReviewRead]:
     get_build_or_404(db, build_id)
     query = (
         select(Review)
@@ -46,7 +48,9 @@ def list_build_reviews(
         .offset(offset)
         .limit(limit)
     )
-    return list(db.scalars(query).all())
+    if rating is not None:
+        query = query.where(Review.rating == rating)
+    return [review_to_read(review) for review in db.scalars(query).all()]
 
 
 @router.post(
@@ -61,7 +65,9 @@ def list_build_reviews(
         422: {"description": "Neteisingas įvertinimas arba komentaras."},
     },
 )
-def create_review(build_id: int, payload: ReviewCreate, db: Session = Depends(get_db)) -> Review:
+def create_review(
+    build_id: int, payload: ReviewCreate, db: Session = Depends(get_db)
+) -> ReviewRead:
     get_build_or_404(db, build_id)
     review = Review(
         build_id=build_id,
@@ -73,7 +79,7 @@ def create_review(build_id: int, payload: ReviewCreate, db: Session = Depends(ge
     db.add(review)
     db.commit()
     db.refresh(review)
-    return review
+    return review_to_read(review)
 
 
 @router.get(
@@ -84,8 +90,8 @@ def create_review(build_id: int, payload: ReviewCreate, db: Session = Depends(ge
     description="Grąžina vieną atsiliepimą pagal jo identifikatorių.",
     responses=NOT_FOUND,
 )
-def get_review(review_id: int, db: Session = Depends(get_db)) -> Review:
-    return _get_review(db, review_id)
+def get_review(review_id: int, db: Session = Depends(get_db)) -> ReviewRead:
+    return review_to_read(_get_review(db, review_id))
 
 
 @router.put(
@@ -101,14 +107,14 @@ def get_review(review_id: int, db: Session = Depends(get_db)) -> Review:
 )
 def replace_review(
     review_id: int, payload: ReviewReplace, db: Session = Depends(get_db)
-) -> Review:
+) -> ReviewRead:
     review = _get_review(db, review_id)
     review.author_name = payload.author_name
     review.rating = payload.rating
     review.comment = payload.comment
     db.commit()
     db.refresh(review)
-    return review
+    return review_to_read(review)
 
 
 @router.delete(

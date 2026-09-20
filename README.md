@@ -21,6 +21,10 @@ Naudotojas platforma galės naudotis neprisiregistravęs: pasirinkti kompiuterio
 
 ### 1.2. Funkciniai reikalavimai
 
+Toliau pateiktas pradinis viso projekto planas. Šiame etape įgyvendintas API;
+faktiškai veikiančios operacijos ir Build hierarchija aprašytos skyriuje
+„Realizuoti API metodai“. Frontend ir autentifikacija palikti kitam etapui.
+
 #### Neregistruotas sistemos naudotojas galės
 
 1. Peržiūrėti platformos reprezentacinį puslapį;
@@ -57,7 +61,9 @@ Sistemos sudedamosios dalys:
 - Kliento pusė (angl. Front-End) – naudojant React;
 - Serverio pusė (angl. Back-End) – naudojant Python FastAPI. Duomenų bazė – PostgreSQL.
 
-2.1. pav. Pavaizduota kuriamos sistemos diagrama. Sistemos talpinimui yra naudojamas AWS VPS serveris. Kiekviena sistemos dalis yra diegiama tame pačiame serveryje, atskiruose Docker konteineriuose. Internetinė aplikacija pasiekiama per HTTPS. Šios sistemos veikimui yra reikalingas PC Builder API, kuris pasiekiamas per aplikacijų programavimo sąsają. Pats Pharma API vykdo mainus su duomenų baze ir tam naudoja SQLAlchemy ORM.
+Numatytas sistemos talpinimas AWS VPS serveryje, atskiruose Docker konteineriuose,
+naudojant HTTPS. PC Builder API vykdo mainus su duomenų baze per SQLAlchemy ORM.
+Toliau aprašyta įgyvendinta vietinė Docker Compose aplinka.
 
 ---
 
@@ -88,52 +94,109 @@ Paleidus pasiekiama:
 - OpenAPI JSON – <http://localhost:8000/api/openapi.json>;
 - statinė OpenAPI kopija – [`api/openapi.json`](api/openapi.json).
 
+Išsamus API naudojimo vadovas su užklausų pavyzdžiais: [`api/README.md`](api/README.md).
+
 ### Realizuoti API metodai
 
-Swagger dokumentacijoje metodai aiškiai atskirti į keturias grupes. Trys pagrindiniai
-taikomosios srities objektai turi po penkis metodus: keturias CRUD operacijas ir
-vieną sąrašo operaciją. Papildoma komponentų ir specifikacijų grupė skirta
-komplekto komponentų priskyrimui, administravimui ir suderinamumui.
+API turi 20 operacijų: komplektų, jų komponentų, komponentų pardavėjų pasiūlymų
+ir atsiliepimų CRUD bei LIST. Visų lentelėje nurodytų kelių pradžia — `/api/v1`.
 
-| Nr. | Metodas | Kelias | Paskirtis | Sėkmės kodas |
-|---:|---|---|---|---:|
-| 1 | `GET` | `/api/v1/components` | Gauti ir filtruoti komponentų katalogą | 200 |
-| 2 | `POST` | `/api/v1/components` | Sukurti komponentą su pardavėjų pasiūlymais | 201 |
-| 3 | `GET` | `/api/v1/components/{component_id}` | Gauti komponentą | 200 |
-| 4 | `PUT` | `/api/v1/components/{component_id}` | Pilnai atnaujinti komponentą | 200 |
-| 5 | `DELETE` | `/api/v1/components/{component_id}` | Pašalinti komponentą | 204 |
-| 6 | `GET` | `/api/v1/builds` | Gauti komplektus, kainas ir suderinamumą | 200 |
-| 7 | `POST` | `/api/v1/builds` | Sukurti komplektą | 201 |
-| 8 | `GET` | `/api/v1/builds/{build_id}` | Gauti komplektą | 200 |
-| 9 | `PUT` | `/api/v1/builds/{build_id}` | Pilnai atnaujinti komplektą | 200 |
-| 10 | `DELETE` | `/api/v1/builds/{build_id}` | Pašalinti komplektą | 204 |
-| 11 | `GET` | `/api/v1/components/{component_id}/offers` | Gauti komponento pardavėjų pasiūlymų sąrašą | 200 |
-| 12 | `POST` | `/api/v1/components/{component_id}/offers` | Sukurti komponento pardavėjo pasiūlymą | 201 |
-| 13 | `GET` | `/api/v1/offers/{offer_id}` | Gauti pardavėjo pasiūlymą | 200 |
-| 14 | `PUT` | `/api/v1/offers/{offer_id}` | Pilnai atnaujinti pardavėjo pasiūlymą | 200 |
-| 15 | `DELETE` | `/api/v1/offers/{offer_id}` | Pašalinti pardavėjo pasiūlymą | 204 |
-| 16 | `GET` | `/api/v1/builds/{build_id}/reviews` | Gauti konkretaus komplekto atsiliepimų sąrašą | 200 |
-| 17 | `POST` | `/api/v1/builds/{build_id}/reviews` | Sukurti atsiliepimą | 201 |
-| 18 | `GET` | `/api/v1/reviews/{review_id}` | Gauti atsiliepimą | 200 |
-| 19 | `PUT` | `/api/v1/reviews/{review_id}` | Pilnai atnaujinti atsiliepimą | 200 |
-| 20 | `DELETE` | `/api/v1/reviews/{review_id}` | Pašalinti atsiliepimą | 204 |
+| Resursas | LIST `GET` ir CREATE `POST` | READ `GET`, UPDATE `PUT`, DELETE `DELETE` |
+|---|---|---|
+| Komplektas | `/builds` | `/builds/{build_id}` |
+| Komponentas | `/builds/{build_id}/components` | `/components/{component_id}` |
+| Pasiūlymas | `/builds/{build_id}/components/{component_id}/offers` | `/offers/{offer_id}` |
+| Atsiliepimas | `/builds/{build_id}/reviews` | `/reviews/{review_id}` |
 
-Hierarchinis `GET /api/v1/builds/{build_id}` atsakymas pateikia struktūrą
-`komplektas → komponentas → pardavėjo pasiūlymas`. Komponento `category` nusako
-tipą (`cpu`, `gpu`, `memory` ir kt.), o jo `offers` lauke pateikiamos parduotuvės,
-kainos ir įsigijimo nuorodos.
+Privaloma hierarchija prasideda nuo **Build**:
 
-Užklausos ir atsakymai su turiniu naudoja `application/json`; sėkmingi `DELETE` grąžina `204 No Content` be atsakymo kūno. Neegzistuojantis resursas grąžina `404`, struktūriškai blogas payload – `422`, o semantiškai neteisingas komplektas (dvi tos pačios kategorijos dalys) – `400`.
+```text
+Build (1) ── (N) Component (1) ── (N) RetailOffer
+    └─────── (N) Review
+```
+
+`components.build_id` ir `retail_offers.component_id` yra privalomi išoriniai
+raktai. Jungiamoji `build_components` lentelė pašalinta: N:M ryšio nebėra.
+Komponentas yra konkretaus komplekto dalies įrašas, todėl tas pats fizinis modelis
+skirtinguose komplektuose saugomas atskirai, su atskirais pasiūlymais.
+Kategorija (`cpu`, `gpu`, `memory` ir kt.) yra komponento laukas, ne atskira esybė.
+Komplekte gali būti vienas kiekvienos kategorijos komponentas.
+
+Pavyzdys, apimantis visus tris hierarchijos lygius:
+
+```http
+GET /api/v1/builds/1/components/1/offers
+```
+
+Sąrašai ir kūrimas naudoja įdėtinius kolekcijų URL. Pasiūlymų kolekcijos metodai
+grąžina `404`, jei komponentas nepriklauso URL nurodytam komplektui.
+Individualiems GET, PUT ir DELETE pakanka `/components/{component_id}` arba
+`/offers/{offer_id}`: tėvai nustatomi pagal duomenų bazės ryšius, jų ID kartoti nereikia.
+Tai nekeičia privalomos 1:N hierarchijos; `links` pateikia nuorodas į tėvus.
+Seni įdėtiniai individualių komponentų ir pasiūlymų URL nebepalaikomi.
+
+Komplektas kuriamas tik su jo metaduomenimis; komponentas sukuriamas per
+`POST /builds/{build_id}/components`, pasiūlymas — per komponento `/offers`.
+Senas `component_ids` priskyrimo būdas nebepalaikomas. Komponento `PUT`
+keičia tik komponento laukus ir išsaugo jo pasiūlymus; pasiūlymai turi savo CRUD.
+Komponento perkelti į kitą komplektą per `PUT` negalima.
+Ištrynus komplektą ištrinami jo komponentai, jų pasiūlymai ir atsiliepimai.
+Kitų komplektų įrašai nekeičiami.
+
+Sudėtinis panaudojimo atvejis — `GET /builds/{build_id}`: vienas atsakymas
+sujungia komplektą, komponentus, jų pasiūlymus ir atsiliepimus.
+
+Visų esybių atsakymai turi `links.self` ir susijusių API resursų nuorodas.
+Komplekto `links.components` veda į jo komponentus, komponento `links.offers`
+— į trijų lygių pasiūlymų URL. Pasiūlymas turi nuorodas į save, komponentą ir
+komplektą. Nuorodos yra santykinės serverio šaknies atžvilgiu.
+Atskiras `product_url` laukas skirtas pardavėjo svetainei.
+
+Visi keturi sąrašai turi `limit` (1–200, numatyta 100), `offset`
+(0–2147483647) ir filtrą:
+
+| Sąrašas | Filtras |
+|---|---|
+| Komplektai | `public_only=true` |
+| Komplekto komponentai | `category=cpu` |
+| Komponento pasiūlymai | `in_stock=true` arba `false` |
+| Komplekto atsiliepimai | `rating=1..5` |
+
+Sėkmingas `POST` grąžina `201`, skaitymas ir atnaujinimas — `200`,
+`DELETE` — `204` be kūno. Neegzistuojantis arba nurodytai apimčiai
+nepriklausantis resursas grąžina `404`. Pasikartojanti komponento kategorija
+komplekte arba pardavėjas prie komponento — `409`.
+Netinkamas payload, nežinomi laukai, per didelis `offset`, ilgesnė nei
+500 simbolių pardavėjo nuoroda, nulinis simbolis ar `NaN`/`Infinity` —
+`422`. Validacijos klaidos pateikia `loc`, `msg`, `type`.
+Užklausos ir atsakymai su turiniu naudoja `application/json`.
 
 ### Duomenų bazė ir migracijos
 
-API konteineris kiekvieno paleidimo metu saugiai vykdo:
+API konteineris prieš paleidimą vykdo `alembic upgrade head`.
+
+- `0001_schema` sukuria pradinę schemą.
+- `0002_seed` įrašo pradinius prasmingus demonstracinius duomenis.
+- `0003_builds` pakeičia bendrus katalogo ryšius į komponentų priklausomybę
+  komplektui. Pirmajam komplektui išsaugomi originalūs komponentų ir pasiūlymų ID;
+  kitiems sukuriamos nepriklausomos kopijos su tais pačiais duomenimis.
+  Nepriskirti komponentai išsaugomi atskiruose juodraštiniuose komplektuose.
+  Komplektų ir atsiliepimų kiekis papildomas iki mažiausiai 5.
+
+Naujoje DB po migracijų yra 5 komplektai, 40 jiems priklausančių komponentų,
+80 pardavėjų pasiūlymų ir 5 atsiliepimai. Tai 9 komponentų modelių įrašai
+skirtinguose komplektuose. Kainos ir `example.com` nuorodos yra demonstracinės.
+
+Esamai DB atnaujinti:
 
 ```bash
-alembic upgrade head
+docker compose up --build --detach --wait api
 ```
 
-Migracija `0001_schema` sukuria DB schemą, indeksus, išorinius raktus ir apribojimus. Migracija `0002_seed` prideda devynis realistiškus komponentus, po du pardavėjų pasiūlymus, suderinamą ir tyčia nesuderinamą komplektą bei atsiliepimus.
+DB ištrinti nereikia. Prieš esamos DB migravimą išsaugokite atsarginę kopiją:
+`0003_builds` yra vienkryptė migracija. Vėliau savarankiškai pakeistų komponentų
+ir kainų automatinis sujungimas į seną bendrą katalogą galėtų prarasti duomenis,
+todėl grįžimui naudojama prieš migraciją išsaugota DB kopija.
 
 Migracijų būseną galima patikrinti:
 
@@ -142,33 +205,33 @@ docker compose exec api alembic current
 docker compose exec api alembic history
 ```
 
-Norint visiškai atkurti pradinius demonstracinius duomenis:
-
-```bash
-docker compose down --volumes
-docker compose up --build --detach --wait
-```
-
 ### Greita atsiskaitymo demonstracija
 
-Postman kolekcija yra [`postman/PC_Builder_API.postman_collection.json`](postman/PC_Builder_API.postman_collection.json). Visus metodus ir privalomus klaidų scenarijus galima paleisti viena komanda:
+[Postman kolekcija](postman/PC_Builder_API.postman_collection.json) apima visas
+20 operacijų. Ji sukuria du komplektus ir to paties modelio komponentus juose,
+patikrina jų nepriklausomumą, trijų lygių apimtį, hypermedia, filtravimą,
+puslapiavimą, sudėtinį atsakymą bei `404`, `409`, `422` scenarijus.
+Laikini įrašai pašalinami; kolekcija nepriklauso nuo konkrečių pradinių ID.
 
 ```bash
 docker compose --profile demo run --rm demo
 ```
 
-Trumpinys tai pačiai komandai: `make demo`. Paleidimui taip pat galima naudoti `make up`, testams – `make test`, o pradinei DB būsenai atkurti – `make reset`.
-
-Kolekcija vykdo API operacijas ir papildomus `404`, `422` bei `400` scenarijus.
-Sukurti laikini duomenys kolekcijos pabaigoje pašalinami, todėl ją galima kartoti.
-
-Automatiniai API testai vykdomi izoliuotame konteineryje:
+Automatiniai API testai:
 
 ```bash
 docker compose --profile test run --build --rm api-test
 ```
 
-Sustabdyti aplikaciją, išsaugant DB duomenis:
+Testai naudoja izoliuotą atmintinę SQLite DB. Jie tikrina ir patį 1:N modelį,
+netinkamų tėvinių ID atmetimą kolekcijų operacijoms, trumpus individualių objektų URL, kopijų nepriklausomumą,
+šalinimo ryšius ir Postman aprėptį. Newman patikra vykdoma su PostgreSQL.
+
+Trumpiniai: `make up`, `make demo`, `make test`.
+`make reset` pašalina DB volume ir atkuria pradinius duomenis; paprastam
+atnaujinimui šios komandos nereikia.
+
+Sustabdyti aplikaciją, išsaugant DB:
 
 ```bash
 docker compose down

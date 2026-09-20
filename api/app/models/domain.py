@@ -8,13 +8,11 @@ from sqlalchemy import (
     JSON,
     Boolean,
     CheckConstraint,
-    Column,
     DateTime,
     ForeignKey,
     Integer,
     Numeric,
     String,
-    Table,
     Text,
     UniqueConstraint,
 )
@@ -34,36 +32,21 @@ class ComponentCategory(StrEnum):
     COOLER = "cooler"
 
 
-build_components = Table(
-    "build_components",
-    Base.metadata,
-    Column("build_id", ForeignKey("builds.id", ondelete="CASCADE"), primary_key=True),
-    Column(
-        "component_id",
-        ForeignKey("components.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-)
-
-
 class Component(TimestampMixin, Base):
     __tablename__ = "components"
-    __table_args__ = (
-        UniqueConstraint("manufacturer", "model", name="uq_component_manufacturer_model"),
-    )
+    __table_args__ = (UniqueConstraint("build_id", "category", name="uq_component_build_category"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    build_id: Mapped[int] = mapped_column(ForeignKey("builds.id", ondelete="CASCADE"), index=True)
     category: Mapped[str] = mapped_column(String(32), index=True)
     manufacturer: Mapped[str] = mapped_column(String(80))
     model: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text)
     specifications: Mapped[dict] = mapped_column(JSON, default=dict)
 
+    build: Mapped[Build] = relationship(back_populates="components")
     offers: Mapped[list[RetailOffer]] = relationship(
         back_populates="component", cascade="all, delete-orphan", lazy="selectin"
-    )
-    builds: Mapped[list[Build]] = relationship(
-        secondary=build_components, back_populates="components"
     )
 
 
@@ -96,7 +79,7 @@ class Build(TimestampMixin, Base):
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
 
     components: Mapped[list[Component]] = relationship(
-        secondary=build_components, back_populates="builds", lazy="selectin"
+        back_populates="build", cascade="all, delete-orphan", lazy="selectin"
     )
     reviews: Mapped[list[Review]] = relationship(
         back_populates="build", cascade="all, delete-orphan", lazy="selectin"

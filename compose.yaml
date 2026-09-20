@@ -83,6 +83,8 @@ services:
       context: ./api
       target: test
     profiles: ["test"]
+    volumes:
+      - ./postman:/postman:ro
 
 volumes:
   postgres_data:
