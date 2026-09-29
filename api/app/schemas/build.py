@@ -9,10 +9,10 @@ from app.schemas.review import ReviewRead
 
 class BuildInput(ApiInput):
     name: str = Field(min_length=3, max_length=120, examples=["1440p Gaming PC"])
-    owner_name: str = Field(min_length=2, max_length=80, examples=["Juozas"])
     description: str | None = Field(default=None, max_length=2000)
     is_public: bool = Field(
-        default=False, description="Viešumo žyma sąrašo filtravimui, ne prieigos kontrolė."
+        default=False,
+        description="Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – savininkas ir administratorius.",
     )
 
 
@@ -27,6 +27,7 @@ class BuildReplace(BuildInput):
 class BuildRead(BaseModel):
     id: int
     name: str
+    owner_id: int | None
     owner_name: str
     description: str | None
     is_public: bool

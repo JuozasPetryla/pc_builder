@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PC Builder – Build → Component → RetailOffer",
-    "description": "Visos 20 CRUD/LIST operacijų, 1:N hierarchija nuo Build, scoping, hypermedia, filtrai, puslapiavimas ir klaidų scenarijai. Laikini įrašai pašalinami; nuo seed ID nepriklauso.",
+    "description": "JWT registracija, prisijungimas, rotacija, atsijungimas ir 20 CRUD operacijų. Sukuria testinį naudotoją; jo paskyra lieka DB, sukurti komplektai pašalinami.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -36,6 +36,235 @@
   ],
   "item": [
     {
+      "name": "Registracija",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/register",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"{{authUsername}}\", \"password\": \"{{authPassword}}\"}"
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('authUsername', 'demo-' + pm.variables.replaceIn('{{$guid}}'));",
+              "pm.collectionVariables.set('authPassword', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 atsakymas', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('userId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Prisijungimas",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"{{authUsername}}\", \"password\": \"{{authPassword}}\"}"
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('accessToken', pm.response.json().access_token);",
+              "pm.collectionVariables.set('refreshToken', pm.response.json().refresh_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mano paskyra",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vieša naudotojo informacija",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Naudotojų sąrašas tik admin",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/users",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blokavimas tik admin",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/status",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"is_blocked\": true}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Naudotojo šalinimas tik admin",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Atnaujinti žetonus",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/refresh",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"refresh_token\": \"{{refreshToken}}\"}"
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('accessToken', pm.response.json().access_token);",
+              "pm.collectionVariables.set('refreshToken', pm.response.json().refresh_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Naudotojas negali sau suteikti admin rolės",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/role",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"role\": \"admin\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "GET komplektų sąrašas, filtras ir puslapiavimas",
       "request": {
         "method": "GET",
@@ -66,7 +295,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"name\":\"Postman demonstracijos PC\",\"owner_name\":\"Juozas\",\"description\":\"Hierarchijos patikros komplektas.\",\"is_public\":false}"
+          "raw": "{\"name\": \"Postman demonstracijos PC\", \"description\": \"Hierarchijos patikros komplektas.\", \"is_public\": false}"
         }
       },
       "event": [
@@ -94,7 +323,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"name\":\"Antras demonstracinis PC\",\"owner_name\":\"Juozas\",\"description\":\"Hierarchijos patikros komplektas.\",\"is_public\":false}"
+          "raw": "{\"name\": \"Antras demonstracinis PC\", \"description\": \"Hierarchijos patikros komplektas.\", \"is_public\": false}"
         }
       },
       "event": [
@@ -140,7 +369,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"name\":\"Postman demonstracijos PC\",\"owner_name\":\"Juozas\",\"description\":\"Hierarchijos patikros komplektas.\",\"is_public\":true}"
+          "raw": "{\"name\": \"Postman demonstracijos PC\", \"description\": \"Hierarchijos patikros komplektas.\", \"is_public\": true}"
         }
       },
       "event": [
@@ -168,7 +397,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\":\"cpu\",\"manufacturer\":\"AMD\",\"model\":\"Ryzen 7 7800X3D\",\"description\":\"Komplektui priklausantis procesorius.\",\"specifications\":{\"socket\":\"AM5\",\"cores\":8,\"tdp_watts\":120}}"
+          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Komplektui priklausantis procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
         }
       },
       "event": [
@@ -197,7 +426,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\":\"cpu\",\"manufacturer\":\"AMD\",\"model\":\"Ryzen 7 7800X3D\",\"description\":\"Komplektui priklausantis procesorius.\",\"specifications\":{\"socket\":\"AM5\",\"cores\":8,\"tdp_watts\":120}}"
+          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Komplektui priklausantis procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
         }
       },
       "event": [
@@ -280,7 +509,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\":\"cpu\",\"manufacturer\":\"AMD\",\"model\":\"Ryzen 7 7800X3D\",\"description\":\"Atnaujintas vieno komplekto procesorius.\",\"specifications\":{\"socket\":\"AM5\",\"cores\":8,\"tdp_watts\":120}}"
+          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Atnaujintas vieno komplekto procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
         }
       },
       "event": [
@@ -325,7 +554,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\":\"cpu\",\"manufacturer\":\"AMD\",\"model\":\"Ryzen 7 7800X3D\",\"description\":\"Komplektui priklausantis procesorius.\",\"specifications\":{\"socket\":\"AM5\",\"cores\":8,\"tdp_watts\":120}}"
+          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Komplektui priklausantis procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
         }
       },
       "event": [
@@ -357,7 +586,7 @@
       ]
     },
     {
-      "name": "404 pasiūlymo kūrimas netinkamoje apimtyje",
+      "name": "403 pasiūlymus tvarko tik admin: POST",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/api/v1/builds/{{otherBuildId}}/components/{{componentId}}/offers",
@@ -369,7 +598,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"retailer\":\"Demo parduotuvė\",\"price\":\"299.99\",\"product_url\":\"https://example.com/cpu\",\"in_stock\":true}"
+          "raw": "{\"retailer\": \"Demo parduotuvė\", \"price\": \"299.99\", \"product_url\": \"https://example.com/cpu\", \"in_stock\": true}"
         }
       },
       "event": [
@@ -377,14 +606,14 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('404 atsakymas', () => pm.response.to.have.status(404));"
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
             ]
           }
         }
       ]
     },
     {
-      "name": "POST komponento pasiūlymas",
+      "name": "403 pasiūlymus tvarko tik admin: POST",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/api/v1/builds/{{buildId}}/components/{{componentId}}/offers",
@@ -396,7 +625,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"retailer\":\"Demo parduotuvė\",\"price\":\"299.99\",\"product_url\":\"https://example.com/cpu\",\"in_stock\":true}"
+          "raw": "{\"retailer\": \"Demo parduotuvė\", \"price\": \"299.99\", \"product_url\": \"https://example.com/cpu\", \"in_stock\": true}"
         }
       },
       "event": [
@@ -404,8 +633,7 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('201 atsakymas', () => pm.response.to.have.status(201));",
-              "pm.collectionVariables.set('offerId', pm.response.json().id);"
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
             ]
           }
         }
@@ -423,34 +651,34 @@
           "script": {
             "exec": [
               "pm.test('200 atsakymas', () => pm.response.to.have.status(200));",
-              "pm.test('Komponento pasiūlymas', () => pm.expect(pm.response.json()[0].component_id).to.eql(Number(pm.collectionVariables.get('componentId'))));"
+              "pm.test('Pasiūlymų nėra', () => pm.expect(pm.response.json()).to.eql([]));"
             ]
           }
         }
       ]
     },
     {
-      "name": "GET vienas pasiūlymas",
+      "name": "404 neegzistuojantis pasiūlymas",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/api/v1/offers/{{offerId}}"
+        "url": "{{baseUrl}}/api/v1/offers/2147483647"
       },
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));"
+              "pm.test('404 atsakymas', () => pm.response.to.have.status(404));"
             ]
           }
         }
       ]
     },
     {
-      "name": "PUT pasiūlymas",
+      "name": "403 pasiūlymus tvarko tik admin: PUT",
       "request": {
         "method": "PUT",
-        "url": "{{baseUrl}}/api/v1/offers/{{offerId}}",
+        "url": "{{baseUrl}}/api/v1/offers/2147483647",
         "header": [
           {
             "key": "Content-Type",
@@ -459,7 +687,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"retailer\":\"Demo parduotuvė\",\"price\":\"279.99\",\"product_url\":\"https://example.com/cpu\",\"in_stock\":false}"
+          "raw": "{\"retailer\": \"Demo parduotuvė\", \"price\": \"279.99\", \"product_url\": \"https://example.com/cpu\", \"in_stock\": false}"
         }
       },
       "event": [
@@ -467,8 +695,7 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));",
-              "pm.test('Atnaujinta kaina', () => pm.expect(Number(pm.response.json().price)).to.eql(279.99));"
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
             ]
           }
         }
@@ -493,7 +720,7 @@
       ]
     },
     {
-      "name": "409 tas pats pardavėjas",
+      "name": "403 pasiūlymus tvarko tik admin: POST",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/api/v1/builds/{{buildId}}/components/{{componentId}}/offers",
@@ -505,7 +732,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"retailer\":\"Demo parduotuvė\",\"price\":\"299.99\",\"product_url\":\"https://example.com/cpu\",\"in_stock\":true}"
+          "raw": "{\"retailer\": \"Demo parduotuvė\", \"price\": \"299.99\", \"product_url\": \"https://example.com/cpu\", \"in_stock\": true}"
         }
       },
       "event": [
@@ -513,7 +740,7 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('409 atsakymas', () => pm.response.to.have.status(409));"
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
             ]
           }
         }
@@ -567,7 +794,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"author_name\":\"Postman\",\"rating\":5,\"comment\":\"Patikrintas komplekto atsiliepimas.\"}"
+          "raw": "{\"rating\": 5, \"comment\": \"Patikrintas komplekto atsiliepimas.\"}"
         }
       },
       "event": [
@@ -629,7 +856,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"author_name\":\"Postman\",\"rating\":4,\"comment\":\"Patikrintas komplekto atsiliepimas.\"}"
+          "raw": "{\"rating\": 4, \"comment\": \"Patikrintas komplekto atsiliepimas.\"}"
         }
       },
       "event": [
@@ -655,7 +882,7 @@
           "script": {
             "exec": [
               "pm.test('200 atsakymas', () => pm.response.to.have.status(200));",
-              "pm.test('Sujungtos esybės', () => { const b = pm.response.json(); pm.expect(b.components[0].offers[0].id).to.eql(Number(pm.collectionVariables.get('offerId'))); pm.expect(b.reviews[0].id).to.eql(Number(pm.collectionVariables.get('reviewId'))); });"
+              "pm.test('Sujungtos esybės', () => { const b = pm.response.json(); pm.expect(b.components[0].offers).to.eql([]); pm.expect(b.reviews[0].id).to.eql(Number(pm.collectionVariables.get('reviewId'))); });"
             ]
           }
         }
@@ -679,7 +906,7 @@
       ]
     },
     {
-      "name": "422 NaN kaina",
+      "name": "403 pasiūlymus tvarko tik admin: POST",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/api/v1/builds/{{buildId}}/components/{{componentId}}/offers",
@@ -691,7 +918,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"retailer\":\"Blogas\",\"price\":NaN,\"product_url\":\"https://example.com/invalid\"}"
+          "raw": "{\"retailer\": \"Blogas\", \"price\": NaN, \"product_url\": \"https://example.com/invalid\"}"
         }
       },
       "event": [
@@ -699,7 +926,7 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('422 atsakymas', () => pm.response.to.have.status(422));"
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
             ]
           }
         }
@@ -718,7 +945,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"name\":\"Blogas\\u0000PC\",\"owner_name\":\"Juozas\",\"description\":\"Hierarchijos patikros komplektas.\",\"is_public\":false}"
+          "raw": "{\"name\": \"Blogas\\u0000PC\", \"description\": \"Hierarchijos patikros komplektas.\", \"is_public\": false}"
         }
       },
       "event": [
@@ -745,7 +972,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"author_name\":\"Postman\",\"rating\":9,\"comment\":\"Patikrintas komplekto atsiliepimas.\"}"
+          "raw": "{\"rating\": 9, \"comment\": \"Patikrintas komplekto atsiliepimas.\"}"
         }
       },
       "event": [
@@ -795,17 +1022,17 @@
       ]
     },
     {
-      "name": "GET pirmojo komplekto pasiūlymas išliko",
+      "name": "404 neegzistuojantis pasiūlymas",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/api/v1/offers/{{offerId}}"
+        "url": "{{baseUrl}}/api/v1/offers/2147483647"
       },
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('200 atsakymas', () => pm.response.to.have.status(200));"
+              "pm.test('404 atsakymas', () => pm.response.to.have.status(404));"
             ]
           }
         }
@@ -830,18 +1057,17 @@
       ]
     },
     {
-      "name": "DELETE pasiūlymas",
+      "name": "403 pasiūlymus tvarko tik admin: DELETE",
       "request": {
         "method": "DELETE",
-        "url": "{{baseUrl}}/api/v1/offers/{{offerId}}"
+        "url": "{{baseUrl}}/api/v1/offers/2147483647"
       },
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('204 atsakymas', () => pm.response.to.have.status(204));",
-              "pm.test('Tuščias atsakymas', () => pm.expect(pm.response.text()).to.eql(''));"
+              "pm.test('403 atsakymas', () => pm.response.to.have.status(403));"
             ]
           }
         }
@@ -899,6 +1125,80 @@
           }
         }
       ]
+    },
+    {
+      "name": "Atsijungimas",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('204 atsakymas', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access nebegalioja",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('401 atsakymas', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refresh nebegalioja",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/auth/refresh",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"refresh_token\": \"{{refreshToken}}\"}"
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('401 atsakymas', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }

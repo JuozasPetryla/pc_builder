@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 BUILD_PAYLOAD = {
     "name": "API testų komplektas",
-    "owner_name": "Testuotojas",
     "description": "Testinis PC.",
     "is_public": False,
 }
@@ -19,7 +18,7 @@ OFFER_PAYLOAD = {
     "product_url": "https://example.com/cpu",
     "in_stock": True,
 }
-REVIEW_PAYLOAD = {"author_name": "Testuotojas", "rating": 5, "comment": "Puikus komplektas."}
+REVIEW_PAYLOAD = {"rating": 5, "comment": "Puikus komplektas."}
 
 
 def test_all_crud_operations(client: TestClient) -> None:
@@ -81,8 +80,8 @@ def test_all_crud_operations(client: TestClient) -> None:
 def test_openapi_documents_four_crud_groups(client: TestClient) -> None:
     specification = client.get("/api/openapi.json").json()
     operations = [op for methods in specification["paths"].values() for op in methods.values()]
-    assert len(operations) == 20
-    assert len({op["operationId"] for op in operations}) == 20
+    assert len(operations) == 30
+    assert len({op["operationId"] for op in operations}) == len(operations)
     assert all(op.get("summary") and op.get("description") for op in operations)
     for tag in ("Komplektai", "Komponentai", "Atsiliepimai", "Pardavėjų pasiūlymai"):
         assert sum(tag in op["tags"] for op in operations) == 5

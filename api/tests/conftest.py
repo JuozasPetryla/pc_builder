@@ -1,16 +1,23 @@
+import os
 from collections.abc import Generator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from uuid import uuid4
+
+os.environ["JWT_SECRET"] = "test-only-secret-key-at-least-32-characters"
+
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, update
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.security import issue_tokens, password_hash
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.auth import AuthSession, User
 from app.models.domain import Build, Component, RetailOffer, Review
 
 
@@ -92,7 +99,7 @@ def seeded_db(db: Session) -> Session:
 
 
 @pytest.fixture()
-def client(seeded_db: Session) -> Generator[TestClient]:
+def anonymous_client(seeded_db: Session) -> Generator[TestClient]:
     def override_get_db() -> Generator[Session]:
         with Session(bind=seeded_db.get_bind(), expire_on_commit=False) as session:
             yield session
@@ -101,3 +108,23 @@ def client(seeded_db: Session) -> Generator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def client(anonymous_client: TestClient, seeded_db: Session) -> TestClient:
+    user = User(
+        username="test-admin", password_hash=password_hash.hash("test-password"), role="admin"
+    )
+    seeded_db.add(user)
+    seeded_db.flush()
+    session = AuthSession(
+        id=str(uuid4()), user_id=user.id, expires_at=datetime.now(UTC) + timedelta(days=7)
+    )
+    # General CRUD fixtures belong to the authenticated test administrator.
+    seeded_db.execute(update(Build).values(owner_id=user.id))
+    seeded_db.execute(update(Review).values(author_id=user.id))
+    tokens = issue_tokens(user, session)
+    seeded_db.add(session)
+    seeded_db.commit()
+    anonymous_client.headers["Authorization"] = f"Bearer {tokens.access_token}"
+    return anonymous_client

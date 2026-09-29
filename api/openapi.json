@@ -16,6 +16,11 @@
         "summary": "Gauti komplektų sąrašą",
         "description": "Grąžina komplektus su komponentais, jų pardavėjų pasiūlymais ir atsiliepimais.",
         "operationId": "listBuilds",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "public_only",
@@ -67,6 +72,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -86,6 +97,11 @@
         "summary": "Sukurti kompiuterio komplektą",
         "description": "Sukuria komplektą; jam priklausantys komponentai kuriami per komponentų API.",
         "operationId": "createBuild",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -107,6 +123,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "422": {
             "description": "Neteisingas užklausos turinys."
           }
@@ -121,6 +143,11 @@
         "summary": "Gauti komplektą",
         "description": "Sudėtinis resursas: viename atsakyme grąžina komplektą, komponentus, jų pardavėjų pasiūlymus ir komplekto atsiliepimus.",
         "operationId": "getBuild",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -142,6 +169,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Komplektas nerastas.",
@@ -170,8 +203,13 @@
           "Komplektai"
         ],
         "summary": "Atnaujinti komplektą",
-        "description": "Pilnai pakeičia komplekto metaduomenis. Komponentai ir atsiliepimai tvarkomi atskirais metodais.",
+        "description": "Tik savininkas gali pakeisti komplekto metaduomenis. Komponentai ir atsiliepimai tvarkomi atskirais metodais.",
         "operationId": "replaceBuild",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -204,6 +242,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Komplektas nerastas.",
             "content": {
@@ -224,8 +268,13 @@
           "Komplektai"
         ],
         "summary": "Pašalinti komplektą",
-        "description": "Pašalina komplektą, jo komponentus, jų pasiūlymus ir atsiliepimus.",
+        "description": "Savininkas šalina savo komplektą; moderatorius ir admin gali šalinti svetimą viešą komplektą. Kartu pašalinami jo komponentai, pasiūlymai ir atsiliepimai.",
         "operationId": "deleteBuild",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -240,6 +289,12 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Komplektas nerastas.",
@@ -272,6 +327,11 @@
         "summary": "Gauti komplekto komponentus",
         "description": "Puslapiuojamas konkretaus komplekto komponentų sąrašas su kategorijos filtru.",
         "operationId": "listBuildComponents",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -338,6 +398,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Komplektas arba jo komponentas nerastas.",
             "content": {
@@ -367,6 +433,11 @@
         "summary": "Sukurti komplekto komponentą",
         "description": "Sukuria tik šiam komplektui priklausantį komponentą. Kategorija komplekte nesikartoja.",
         "operationId": "createBuildComponent",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -398,6 +469,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Komplektas arba jo komponentas nerastas.",
@@ -440,6 +517,11 @@
         "summary": "Gauti komplekto komponentą",
         "description": "Grąžina komponentą pagal unikalų ID. Jo komplektas nurodytas build_id ir links.build.",
         "operationId": "getComponent",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "component_id",
@@ -461,6 +543,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Komplektas arba jo komponentas nerastas.",
@@ -491,6 +579,11 @@
         "summary": "Atnaujinti komplekto komponentą",
         "description": "Pakeičia komponento duomenis, nekeisdamas jo komplekto ar pasiūlymų.",
         "operationId": "replaceComponent",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "component_id",
@@ -522,6 +615,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Komplektas arba jo komponentas nerastas.",
@@ -562,6 +661,11 @@
         "summary": "Pašalinti komplekto komponentą",
         "description": "Pašalina šio komplekto komponentą ir jo pasiūlymus; kitų komplektų neliečia.",
         "operationId": "deleteComponent",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "component_id",
@@ -576,6 +680,12 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Komplektas arba jo komponentas nerastas.",
@@ -608,6 +718,11 @@
         "summary": "Gauti komplekto atsiliepimų sąrašą",
         "description": "Hierarchinis sąrašo metodas: grąžina visus konkrečiam komplektui priklausančius atsiliepimus.",
         "operationId": "listBuildReviews",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -676,6 +791,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Komplektas nerastas.",
             "content": {
@@ -705,6 +826,11 @@
         "summary": "Įvertinti ir pakomentuoti komplektą",
         "description": "Prideda 1–5 balų įvertinimą ir tekstinį komentarą prie komplekto.",
         "operationId": "createBuildReview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -737,6 +863,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Komplektas nerastas.",
             "content": {
@@ -761,6 +893,11 @@
         "summary": "Gauti atsiliepimą",
         "description": "Grąžina vieną atsiliepimą pagal jo identifikatorių.",
         "operationId": "getReview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "review_id",
@@ -782,6 +919,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Atsiliepimas nerastas.",
@@ -810,8 +953,13 @@
           "Atsiliepimai"
         ],
         "summary": "Atnaujinti atsiliepimą",
-        "description": "Pilnai pakeičia atsiliepimo autorių, įvertinimą ir komentarą.",
+        "description": "Pakeičia savo atsiliepimo įvertinimą ir komentarą; autorius nesikeičia.",
         "operationId": "replaceReview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "review_id",
@@ -844,6 +992,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Atsiliepimas nerastas.",
             "content": {
@@ -864,8 +1018,13 @@
           "Atsiliepimai"
         ],
         "summary": "Pašalinti atsiliepimą",
-        "description": "Pašalina komplekto įvertinimą ir komentarą.",
+        "description": "Autorius šalina savo atsiliepimą matomame komplekte; moderatorius ir admin gali šalinti svetimą atsiliepimą viešame komplekte.",
         "operationId": "deleteReview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "review_id",
@@ -880,6 +1039,12 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Atsiliepimas nerastas.",
@@ -912,6 +1077,11 @@
         "summary": "Gauti komplekto komponento pasiūlymus",
         "description": "Trijų lygių hierarchija: komplektas → komponentas → pasiūlymai. Tikrinama priklausomybė.",
         "operationId": "listBuildComponentOffers",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -987,6 +1157,12 @@
               }
             }
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Resursas nurodytoje hierarchijoje nerastas.",
             "content": {
@@ -1014,8 +1190,13 @@
           "Pardavėjų pasiūlymai"
         ],
         "summary": "Sukurti komponento pasiūlymą",
-        "description": "Prideda pasiūlymą tik nurodyto komplekto komponentui.",
+        "description": "Tik admin: prideda pasiūlymą matomo komplekto komponentui.",
         "operationId": "createBuildComponentOffer",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "build_id",
@@ -1056,6 +1237,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Resursas nurodytoje hierarchijoje nerastas.",
@@ -1098,6 +1285,11 @@
         "summary": "Gauti komponento pasiūlymą",
         "description": "Grąžina pasiūlymą pagal unikalų ID. Komponentas ir komplektas pasiekiami per links.",
         "operationId": "getOffer",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "offer_id",
@@ -1119,6 +1311,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Resursas nurodytoje hierarchijoje nerastas.",
@@ -1147,8 +1345,13 @@
           "Pardavėjų pasiūlymai"
         ],
         "summary": "Atnaujinti komponento pasiūlymą",
-        "description": "Pakeičia pasiūlymo duomenis pagal ID, nekeisdamas jo komponento.",
+        "description": "Tik admin: pakeičia pasiūlymą matomame komplekte, nekeisdamas jo komponento.",
         "operationId": "replaceOffer",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "offer_id",
@@ -1180,6 +1383,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "404": {
             "description": "Resursas nurodytoje hierarchijoje nerastas.",
@@ -1218,8 +1427,13 @@
           "Pardavėjų pasiūlymai"
         ],
         "summary": "Pašalinti komponento pasiūlymą",
-        "description": "Pašalina pasiūlymą pagal unikalų ID; komponentas ir komplektas nešalinami.",
+        "description": "Tik admin: pašalina pasiūlymą matomame komplekte; komponentas ir komplektas nešalinami.",
         "operationId": "deleteOffer",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "offer_id",
@@ -1235,6 +1449,12 @@
           "204": {
             "description": "Successful Response"
           },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
           "404": {
             "description": "Resursas nurodytoje hierarchijoje nerastas.",
             "content": {
@@ -1244,6 +1464,509 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Autentifikacija"
+        ],
+        "summary": "Registruotis",
+        "description": "Sukuria naudotoją su user role.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Autentifikacija"
+        ],
+        "summary": "Prisijungti",
+        "description": "Grąžina trumpalaikį JWT ir ilgalaikį atnaujinimo žetoną.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPair"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Autentifikacija"
+        ],
+        "summary": "Atnaujinti žetonus",
+        "description": "Vieną kartą panaudoja refresh žetoną ir grąžina naują porą. Sesija galioja 7 dienas nuo prisijungimo.",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPair"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Autentifikacija"
+        ],
+        "summary": "Atsijungti",
+        "description": "Panaikina šios sesijos access ir refresh žetonų galiojimą.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Autentifikacija"
+        ],
+        "summary": "Mano paskyra",
+        "description": "Grąžina prisijungusio naudotojo ID, vardą ir rolę.",
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/role": {
+      "put": {
+        "tags": [
+          "Autentifikacija"
+        ],
+        "summary": "Pakeisti naudotojo rolę",
+        "description": "Tik administratorius gali skirti roles. Panaikina pakeistos paskyros sesijas.",
+        "operationId": "change_role_api_v1_users__user_id__role_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "Naudotojai"
+        ],
+        "summary": "Gauti naudotojų sąrašą",
+        "description": "Tik administratorius gali skaityti puslapiuojamą paskyrų sąrašą ir blokavimo būsenas.",
+        "operationId": "list_users_api_v1_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserAdminRead"
+                  },
+                  "title": "Response List Users Api V1 Users Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "tags": [
+          "Naudotojai"
+        ],
+        "summary": "Gauti viešą naudotojo informaciją",
+        "description": "Prisijungusiems grąžina tik naudotojo ID ir viešą vardą.",
+        "operationId": "get_public_user_api_v1_users__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPublic"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Naudotojai"
+        ],
+        "summary": "Pašalinti naudotoją",
+        "description": "Tik administratorius; pašalina paskyrą ir sesijas, išsaugo anonimizuotą turinį.",
+        "operationId": "delete_user_api_v1_users__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}/status": {
+      "put": {
+        "tags": [
+          "Naudotojai"
+        ],
+        "summary": "Blokuoti arba atblokuoti naudotoją",
+        "description": "Tik administratorius; blokuojant atšaukiamos visos paskyros sesijos.",
+        "operationId": "change_status_api_v1_users__user_id__status_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAdminRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "422": {
             "description": "Validation Error",
@@ -1272,15 +1995,6 @@
               "1440p Gaming PC"
             ]
           },
-          "owner_name": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 2,
-            "title": "Owner Name",
-            "examples": [
-              "Juozas"
-            ]
-          },
           "description": {
             "anyOf": [
               {
@@ -1296,15 +2010,14 @@
           "is_public": {
             "type": "boolean",
             "title": "Is Public",
-            "description": "Viešumo žyma sąrašo filtravimui, ne prieigos kontrolė.",
+            "description": "Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – savininkas ir administratorius.",
             "default": false
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
-          "owner_name"
+          "name"
         ],
         "title": "BuildCreate"
       },
@@ -1340,6 +2053,17 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
           },
           "owner_name": {
             "type": "string",
@@ -1392,6 +2116,7 @@
         "required": [
           "id",
           "name",
+          "owner_id",
           "owner_name",
           "description",
           "is_public",
@@ -1414,15 +2139,6 @@
               "1440p Gaming PC"
             ]
           },
-          "owner_name": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 2,
-            "title": "Owner Name",
-            "examples": [
-              "Juozas"
-            ]
-          },
           "description": {
             "anyOf": [
               {
@@ -1438,15 +2154,14 @@
           "is_public": {
             "type": "boolean",
             "title": "Is Public",
-            "description": "Viešumo žyma sąrašo filtravimui, ne prieigos kontrolė.",
+            "description": "Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – savininkas ir administratorius.",
             "default": false
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "name",
-          "owner_name"
+          "name"
         ],
         "title": "BuildReplace"
       },
@@ -1689,6 +2404,30 @@
         ],
         "title": "ComponentReplace"
       },
+      "Credentials": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 3,
+            "pattern": "^[a-zA-Z0-9_.-]+$",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Credentials"
+      },
       "ErrorResponse": {
         "properties": {
           "detail": {
@@ -1887,17 +2626,24 @@
         ],
         "title": "OfferReplace"
       },
+      "RefreshInput": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Refresh Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshInput"
+      },
       "ReviewCreate": {
         "properties": {
-          "author_name": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 2,
-            "title": "Author Name",
-            "examples": [
-              "Mantas"
-            ]
-          },
           "rating": {
             "type": "integer",
             "maximum": 5.0,
@@ -1917,7 +2663,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "author_name",
           "rating",
           "comment"
         ],
@@ -1951,6 +2696,17 @@
             "type": "integer",
             "title": "Build Id"
           },
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
           "author_name": {
             "type": "string",
             "title": "Author Name"
@@ -1976,6 +2732,7 @@
         "required": [
           "id",
           "build_id",
+          "author_id",
           "author_name",
           "rating",
           "comment",
@@ -1986,15 +2743,6 @@
       },
       "ReviewReplace": {
         "properties": {
-          "author_name": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 2,
-            "title": "Author Name",
-            "examples": [
-              "Mantas"
-            ]
-          },
           "rating": {
             "type": "integer",
             "maximum": 5.0,
@@ -2014,12 +2762,142 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "author_name",
           "rating",
           "comment"
         ],
         "title": "ReviewReplace",
         "description": "Visas atsiliepimo turinys, naudojamas PUT operacijoje."
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "user",
+          "moderator",
+          "admin"
+        ],
+        "title": "Role"
+      },
+      "RoleUpdate": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "RoleUpdate"
+      },
+      "TokenPair": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token",
+          "expires_in"
+        ],
+        "title": "TokenPair"
+      },
+      "UserAdminRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "is_blocked": {
+            "type": "boolean",
+            "title": "Is Blocked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "role",
+          "is_blocked"
+        ],
+        "title": "UserAdminRead"
+      },
+      "UserPublic": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username"
+        ],
+        "title": "UserPublic"
+      },
+      "UserRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "role"
+        ],
+        "title": "UserRead"
+      },
+      "UserStatusUpdate": {
+        "properties": {
+          "is_blocked": {
+            "type": "boolean",
+            "title": "Is Blocked"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "is_blocked"
+        ],
+        "title": "UserStatusUpdate"
       },
       "ValidationError": {
         "properties": {
@@ -2060,6 +2938,12 @@
           "type"
         ],
         "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   },

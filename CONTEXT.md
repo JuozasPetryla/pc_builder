@@ -11,4 +11,10 @@
 - Swagger: /api/docs; OpenAPI: /api/openapi.json ir api/openapi.json.
 - Postman/Newman: docker compose --profile demo run --rm demo.
 - API testai: docker compose --profile test run --build --rm api-test.
-- Autentifikacija ir detalus teisių valdymas palikti kitam etapui.
+- JWT: PyJWT HS256, Argon2, 15 min. access, vienkartinė refresh rotacija, 7 dienų DB sesijos, logout iškart atšaukia access ir refresh.
+- Rolės user/moderator/admin; savininko ID ir privataus komplekto patikros visuose hierarchijos keliuose. Registracija visada user; admin kuriamas scripts.create_admin.
+- Migracija 0004_auth: users, auth_sessions, builds.owner_id, reviews.author_id. Seni NULL savininkai negali būti perimami; viešą turinį gali šalinti moderator/admin. JWT_SECRET privalomas.
+- 10 papildomų auth/naudotojų metodų; vardai ir savininko ID POST/PUT įvestyje nepriimami.
+
+- 0005_user_status: paskyrų blokavimas; admin sąrašas, blokavimas / atblokavimas ir šalinimas; prisijungusiems viešas profilis (ID, vardas). Šalinimas išsaugo anonimizuotą turinį. Svečio nėra: visi domeno metodai reikalauja prisijungimo.
+- user tvarko savo turinį; moderator/admin gali papildomai šalinti svetimą viešą turinį, bet negali jo redaguoti ar skaityti svetimų privačių komplektų. Tik admin valdo paskyras, roles ir matomų komplektų pasiūlymus. Bendras katalogas neįgyvendintas; komponentus tvarko komplekto savininkas.

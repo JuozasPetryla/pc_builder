@@ -4,9 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import (
+    check_build_read,
+    check_content_delete,
+    check_owner,
+    get_current_user,
+)
 from app.api.presenters import review_to_read
 from app.api.routes.builds import get_build_or_404
 from app.db.session import get_db
+from app.models.auth import User
 from app.models.domain import Review
 from app.schemas.common import ErrorResponse
 from app.schemas.review import ReviewCreate, ReviewRead, ReviewReplace
@@ -39,8 +46,9 @@ def list_build_reviews(
     limit: int = Query(default=100, ge=1, le=200),
     offset: int = Query(default=0, ge=0, le=2_147_483_647),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> list[ReviewRead]:
-    get_build_or_404(db, build_id)
+    check_build_read(get_build_or_404(db, build_id), user)
     query = (
         select(Review)
         .where(Review.build_id == build_id)
@@ -66,12 +74,16 @@ def list_build_reviews(
     },
 )
 def create_review(
-    build_id: int, payload: ReviewCreate, db: Session = Depends(get_db)
+    build_id: int,
+    payload: ReviewCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> ReviewRead:
-    get_build_or_404(db, build_id)
+    check_build_read(get_build_or_404(db, build_id), user)
     review = Review(
         build_id=build_id,
-        author_name=payload.author_name,
+        author_id=user.id,
+        author_name=user.username,
         rating=payload.rating,
         comment=payload.comment,
         created_at=datetime.now(UTC),
@@ -90,8 +102,12 @@ def create_review(
     description="Grąžina vieną atsiliepimą pagal jo identifikatorių.",
     responses=NOT_FOUND,
 )
-def get_review(review_id: int, db: Session = Depends(get_db)) -> ReviewRead:
-    return review_to_read(_get_review(db, review_id))
+def get_review(
+    review_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> ReviewRead:
+    review = _get_review(db, review_id)
+    check_build_read(review.build, user)
+    return review_to_read(review)
 
 
 @router.put(
@@ -99,17 +115,21 @@ def get_review(review_id: int, db: Session = Depends(get_db)) -> ReviewRead:
     response_model=ReviewRead,
     operation_id="replaceReview",
     summary="Atnaujinti atsiliepimą",
-    description="Pilnai pakeičia atsiliepimo autorių, įvertinimą ir komentarą.",
+    description="Pakeičia savo atsiliepimo įvertinimą ir komentarą; autorius nesikeičia.",
     responses={
         **NOT_FOUND,
         422: {"description": "Neteisingas įvertinimas arba komentaras."},
     },
 )
 def replace_review(
-    review_id: int, payload: ReviewReplace, db: Session = Depends(get_db)
+    review_id: int,
+    payload: ReviewReplace,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> ReviewRead:
     review = _get_review(db, review_id)
-    review.author_name = payload.author_name
+    check_build_read(review.build, user)
+    check_owner(review.author_id, user)
     review.rating = payload.rating
     review.comment = payload.comment
     db.commit()
@@ -122,11 +142,14 @@ def replace_review(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteReview",
     summary="Pašalinti atsiliepimą",
-    description="Pašalina komplekto įvertinimą ir komentarą.",
+    description="Autorius šalina savo atsiliepimą matomame komplekte; moderatorius ir admin gali šalinti svetimą atsiliepimą viešame komplekte.",
     responses=NOT_FOUND,
 )
-def delete_review(review_id: int, db: Session = Depends(get_db)) -> Response:
+def delete_review(
+    review_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     review = _get_review(db, review_id)
+    check_content_delete(review.author_id, review.build, user)
     db.delete(review)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

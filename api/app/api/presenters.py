@@ -47,6 +47,7 @@ def review_to_read(review: Review) -> ReviewRead:
     return ReviewRead(
         id=review.id,
         build_id=review.build_id,
+        author_id=review.author_id,
         author_name=review.author_name,
         rating=review.rating,
         comment=review.comment,
@@ -62,6 +63,7 @@ def build_to_read(build: Build) -> BuildRead:
     return BuildRead(
         id=build.id,
         name=build.name,
+        owner_id=build.owner_id,
         owner_name=build.owner_name,
         description=build.description,
         is_public=build.is_public,

@@ -74,6 +74,7 @@ class Build(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
     owner_name: Mapped[str] = mapped_column(String(80), index=True)
     description: Mapped[str | None] = mapped_column(Text)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
@@ -92,6 +93,7 @@ class Review(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     build_id: Mapped[int] = mapped_column(ForeignKey("builds.id", ondelete="CASCADE"), index=True)
+    author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
     author_name: Mapped[str] = mapped_column(String(80))
     rating: Mapped[int] = mapped_column(Integer)
     comment: Mapped[str] = mapped_column(Text)

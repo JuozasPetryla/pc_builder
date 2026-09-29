@@ -15,7 +15,7 @@ Build (1) ── (N) Component (1) ── (N) RetailOffer
 Kompiuterio komplektas yra aukščiausio lygio objektas. Komponentas priklauso
 vienam komplektui, pasiūlymas — vienam komponentui. Tas pats aparatūros modelis
 skirtinguose komplektuose saugomas kaip atskiri komponentai su atskirais pasiūlymais.
-`category` yra komponento laukas, ne atskiras objektas. Naudotojų esybės nėra.
+`category` yra komponento laukas, ne atskiras objektas. Naudotojų paskyros saugomos `users` lentelėje.
 
 Įdėtiniai URL naudojami sąrašams ir kūrimui: jie nurodo kolekciją, su kuria dirbama.
 Pasiūlymų kolekcijos URL tikrinama, ar komponentas priklauso nurodytam komplektui;
@@ -26,7 +26,7 @@ iš duomenų bazės. Trumpesni URL nekeičia 1:N ryšių ar kaskadinio šalinimo
 ## Visi prieigos taškai
 
 Prie lentelės kelių pridėkite `/api/v1`. Kiekviena eilutė apima penkias operacijas,
-iš viso — 20. PATCH metodų nėra.
+iš viso — 20 CRUD/LIST operacijų ir 10 autentifikacijos ir naudotojų valdymo operacijų. PATCH metodų nėra.
 
 | Objektas | LIST GET / CREATE POST | READ GET / UPDATE PUT / DELETE |
 |---|---|---|
@@ -43,12 +43,13 @@ naudokite naujus kelius arba atsakymo `links.self`.
 ## Sukūrimo pavyzdys
 
 Toliau pateiktus JSON siųskite su `Content-Type: application/json`.
+Pasiūlymus (3 žingsnis) kuria tik administratorius; kitoms rolėms grąžinama `403`.
 ID imkite iš kiekvieno `201` atsakymo `id` lauko, o ne iš pradinių duomenų.
 
 1. `POST /api/v1/builds`:
 
    ```json
-   {"name":"1440p Gaming PC","owner_name":"Juozas","description":"Komplektas žaidimams","is_public":true}
+   {"name":"1440p Gaming PC","description":"Komplektas žaidimams","is_public":true}
    ```
 
 2. `POST /api/v1/builds/{build_id}/components`:
@@ -66,7 +67,7 @@ ID imkite iš kiekvieno `201` atsakymo `id` lauko, o ne iš pradinių duomenų.
 4. Papildomai, `POST /api/v1/builds/{build_id}/reviews`:
 
    ```json
-   {"author_name":"Mantas","rating":5,"comment":"Tinkamas komplektas 1440p žaidimams."}
+   {"rating":5,"comment":"Tinkamas komplektas 1440p žaidimams."}
    ```
 
 URL ir kaina yra demonstraciniai. `price` priima JSON skaičių arba dešimtainę eilutę;
@@ -106,7 +107,7 @@ Nėra `total` ar `next` apvalkalo. `limit` numatyta 100, leidžiama 1–200;
 
 | Sąrašas | Filtras | Praleidus filtrą |
 |---|---|---|
-| Komplektai | `public_only=true` | Visi komplektai; `false` taip pat reiškia visus |
+| Komplektai | `public_only=true` | Tik naudotojui matomi komplektai (vieši ir jo paties) |
 | Komponentai | `category=cpu` | Visos kategorijos tame komplekte |
 | Pasiūlymai | `in_stock=true` arba `false` | Visi to komponento pasiūlymai |
 | Atsiliepimai | `rating=5` (1–5) | Visi to komplekto atsiliepimai |
@@ -149,16 +150,93 @@ Sėkmingas DELETE grąžina `204` be turinio; pakartotinis to paties ID šalinim
 {"detail":[{"loc":["body","name"],"msg":"Field required","type":"missing"}]}
 ```
 
-Autentifikacija ir autorizacija dar neįgyvendintos. `owner_name` ir `author_name`
-yra tekstinės žymos, ne naudotojų paskyros. `is_public=false` neapsaugo nuo skaitymo
-ar keitimo. Šis API nėra paruoštas neapsaugotam viešam diegimui.
+Svečio režimo nėra. Visiems domeno ir naudotojų metodams reikia `Authorization: Bearer <access_token>`.
+Privalomos autentifikacijos atveju neprisijungus arba pateikus negaliojantį žetoną grąžinama `401`, neturint keitimo teisių – `403`.
+Svetimi privatūs komplektai ir jų vaikai skaitant grąžina `404` visoms rolėms, įskaitant admin.
+
+## JWT ir rolės
+
+| Metodas | Kelias | Įvestis / paskirtis |
+|---|---|---|
+| POST | `/auth/register` | `{"username":"jonas","password":"ilgas-slaptazodis"}`; sukuria tik `user` |
+| POST | `/auth/login` | Ta pati įvestis; grąžina `access_token`, `refresh_token`, `token_type`, `expires_in` |
+| POST | `/auth/refresh` | `{"refresh_token":"..."}`; grąžina naują žetonų porą |
+| POST | `/auth/logout` | Su access žetonu; panaikina šios sesijos žetonus, `204` |
+| GET | `/auth/me` | Su access žetonu; ID, vardas ir rolė |
+| GET | `/users` | Tik admin; puslapiuojamas ID, vardų, rolių ir blokavimo būsenų sąrašas |
+| GET | `/users/{user_id}` | Prisijungusiems; tik ID ir naudotojo vardas |
+| PUT | `/users/{user_id}/status` | Tik admin; `{"is_blocked":true}` blokuoja, `false` atblokuoja |
+| DELETE | `/users/{user_id}` | Tik admin; pašalina paskyrą ir visas jos sesijas |
+| PUT | `/users/{user_id}/role` | Tik admin; `{"role":"moderator"}`; panaikina naudotojo sesijas |
+
+Prie kelių pridėkite `/api/v1`. Registracija neprijungia automatiškai: po jos kvieskite login.
+Vardas normalizuojamas į mažąsias raides, leidžiami 3–80 ASCII raidžių, skaitmenų,
+`_`, `-`, `.`. Slaptažodis – 8–128 simboliai, tarpai išsaugomi, DB saugoma Argon2 maiša.
+Registracijoje negalima pateikti rolės. Pirmą administratorių sukurkite serverio komanda:
+
+```bash
+docker compose exec api python -m scripts.create_admin
+```
+
+Komanda interaktyviai paprašo naujo vardo ir slaptažodžio; esamos paskyros neperima.
+Admin negali pakeisti savo rolės, blokuoti arba pašalinti savo paskyros.
+Kitų naudotojų ID administratorius gauna iš `/users` sąrašo.
+
+Blokavimas panaikina visas paskyros sesijas ir neleidžia prisijungti ar atnaujinti žetonų.
+Atblokavus būtina prisijungti iš naujo; senos sesijos neatkuriamos.
+Šalinant paskyrą jos turinys paliekamas: savininko / autoriaus ID tampa `NULL`,
+vardas pakeičiamas į „Pašalintas naudotojas“. Nauja paskyra tuo pačiu vardu turinio neperima.
+
+| Veiksmas | `user` | `moderator` | `admin` |
+|---|---|---|---|
+| Skaityti viešus komplektus, komponentus, pasiūlymus ir komentarus | Taip | Taip | Taip |
+| Skaityti privatų komplektą ir jo turinį | Tik savo | Tik savo | Tik savo |
+| Kurti, išsaugoti ir viešinti savo komplektus | Taip | Taip | Taip |
+| Redaguoti komplektą ir tvarkyti jo komponentus | Tik savo | Tik savo | Tik savo |
+| Šalinti savo komplektus | Taip | Taip | Taip |
+| Šalinti svetimus viešus komplektus | Ne | Taip | Taip |
+| Rašyti atsiliepimus (įvertinimas ir komentaras) | Matomam komplektui | Matomam komplektui | Matomam komplektui |
+| Redaguoti savo komentarus | Matomame komplekte | Matomame komplekte | Matomame komplekte |
+| Šalinti savo komentarus | Matomame komplekte | Matomame komplekte | Matomame komplekte |
+| Šalinti svetimus komentarus viešuose komplektuose | Ne | Taip | Taip |
+| Redaguoti svetimus komplektus ar komentarus | Ne | Ne | Ne |
+| Kurti, keisti ir šalinti pardavėjų pasiūlymus bei kainas | Ne | Ne | Matomuose komplektuose |
+| Peržiūrėti viešą naudotojo profilį (ID, vardas) | Taip | Taip | Taip |
+| Peržiūrėti naudotojų sąrašą ir blokavimo būsenas | Ne | Ne | Taip |
+| Blokuoti, atblokuoti ir šalinti kitų naudotojų paskyras | Ne | Ne | Taip |
+| Keisti kitų naudotojų roles | Ne | Ne | Taip |
+
+`owner_id`, `author_id` ir vardai nustatomi serveryje. POST / PUT jų nepriima.
+Esami įrašai išlaiko vardus, bet jų ID lieka `NULL`: viešą turinį moderatorius ir admin gali šalinti; privatūs įrašai be savininko neprieinami.
+Registracija tokiu pačiu vardu nesuteikia teisių į senus įrašus.
+
+Access žetonas yra HS256 JWT su `sub` (naudotojo ID), `role`, `sid` (sesija),
+`type`, `jti`, `iat`, `exp`, `iss` ir `aud`. Tikrinamas parašas, galiojimas,
+leidėjas, auditorija, DB sesija ir dabartinė rolė. Numatytas galiojimas – 15 min.
+Refresh yra atsitiktinis nepermatomas žetonas, DB saugoma tik SHA-256 maiša.
+Sesija galioja 7 dienas nuo login. Kiekvienas refresh atomiškai pakeičia žetoną:
+seno panaudoti dar kartą negalima. Rotacija nepratęsia bendros 7 dienų sesijos.
+Atsijungimas panaikina visus tos sesijos access žetonus ir dabartinį refresh;
+kitos prisijungimo sesijos lieka veikti. Rolės pakeitimas panaikina visas paskyros sesijas.
+
+Klientas, gavęs `401`, turi vieną kartą iškviesti refresh, išsaugoti **abu** naujus
+žetonus ir pakartoti pradinę užklausą. Lygiagrečioms užklausoms naudokite vieną
+bendrą refresh operaciją. Tik nepavykus refresh reikia prisijungti iš naujo.
+Šio projekto React puslapis kol kas yra pradinė struktūra; autentifikaciją galima
+naudoti per API, Postman ir Swagger: login atsakymo access žetoną įklijuokite į „Authorize“.
+Naršyklės kliente žetonų nesaugokite URL; diegiant serveryje naudokite HTTPS.
+
+Privalomas aplinkos kintamasis `JWT_SECRET` – bent 32 simbolių atsitiktinė paslaptis.
+Visi API procesai turi naudoti tą pačią paslaptį. Keičiant ją visi ankstesni JWT nebegalioja.
+Pasirinktinai: `ACCESS_TOKEN_MINUTES` (1–60, numatyta 15), `REFRESH_TOKEN_DAYS`
+(1–30, numatyta 7), `JWT_ISSUER`, `JWT_AUDIENCE`.
 
 ## Dokumentacijos atnaujinimas ir bandymai
 
 Iš `api` katalogo, aplinkoje su projekto Python priklausomybėmis:
 
 ```bash
-python -m scripts.export_openapi
+JWT_SECRET="$(python -c 'import secrets; print(secrets.token_hex(32))')" python -m scripts.export_openapi
 ```
 
 Tai atnaujina `api/openapi.json` pagal aplikacijos maršrutus ir schemas.
@@ -167,8 +245,8 @@ pakeitimas neatnaujina jau veikiančio seno konteinerio. Aplikacijos atnaujinim�
 atlikite pagal pagrindinį README, įskaitant atsarginę kopiją prieš vienkryptę migraciją.
 
 [Postman rinkinys](../postman/PC_Builder_API.postman_collection.json) apima visas
-20 operacijų. Jis sukuria savo testinius objektus ir juos šalina — vykdykite testavimo
-aplinkoje. Automatizuotas paleidimas iš projekto šaknies:
+30 operacijų. Jis sukuria testinę paskyrą ir savo testinius objektus ir juos šalina — vykdykite testavimo
+aplinkoje. Testinė paskyra lieka DB. Automatizuotas paleidimas iš projekto šaknies:
 
 ```bash
 docker compose --profile demo run --rm demo

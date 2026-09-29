@@ -3,9 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import check_build_read, check_owner, get_current_user
 from app.api.presenters import component_to_read
 from app.api.routes.builds import get_build_or_404
 from app.db.session import get_db
+from app.models.auth import User
 from app.models.domain import Component, ComponentCategory
 from app.schemas.common import ErrorResponse
 from app.schemas.component import ComponentCreate, ComponentRead, ComponentReplace
@@ -52,8 +54,9 @@ def list_components(
     limit: int = Query(default=100, ge=1, le=200),
     offset: int = Query(default=0, ge=0, le=2_147_483_647),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> list[ComponentRead]:
-    get_build_or_404(db, build_id)
+    check_build_read(get_build_or_404(db, build_id), user)
     query = select(Component).where(Component.build_id == build_id).order_by(Component.id)
     if category is not None:
         query = query.where(Component.category == category.value)
@@ -72,9 +75,12 @@ def list_components(
     responses={**NOT_FOUND, **CONFLICT},
 )
 def create_component(
-    build_id: int, payload: ComponentCreate, db: Session = Depends(get_db)
+    build_id: int,
+    payload: ComponentCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> ComponentRead:
-    get_build_or_404(db, build_id)
+    check_owner(get_build_or_404(db, build_id).owner_id, user)
     component = Component(build_id=build_id, **payload.model_dump())
     db.add(component)
     _commit_component(db)
@@ -89,8 +95,12 @@ def create_component(
     description="Grąžina komponentą pagal unikalų ID. Jo komplektas nurodytas build_id ir links.build.",
     responses=NOT_FOUND,
 )
-def get_component(component_id: int, db: Session = Depends(get_db)) -> ComponentRead:
-    return component_to_read(get_component_or_404(db, component_id))
+def get_component(
+    component_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> ComponentRead:
+    component = get_component_or_404(db, component_id)
+    check_build_read(component.build, user)
+    return component_to_read(component)
 
 
 @router.put(
@@ -102,9 +112,13 @@ def get_component(component_id: int, db: Session = Depends(get_db)) -> Component
     responses={**NOT_FOUND, **CONFLICT},
 )
 def replace_component(
-    component_id: int, payload: ComponentReplace, db: Session = Depends(get_db)
+    component_id: int,
+    payload: ComponentReplace,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> ComponentRead:
     component = get_component_or_404(db, component_id)
+    check_owner(component.build.owner_id, user)
     for field, value in payload.model_dump().items():
         setattr(component, field, value)
     _commit_component(db)
@@ -119,7 +133,11 @@ def replace_component(
     description="Pašalina šio komplekto komponentą ir jo pasiūlymus; kitų komplektų neliečia.",
     responses=NOT_FOUND,
 )
-def delete_component(component_id: int, db: Session = Depends(get_db)) -> Response:
-    db.delete(get_component_or_404(db, component_id))
+def delete_component(
+    component_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
+    component = get_component_or_404(db, component_id)
+    check_owner(component.build.owner_id, user)
+    db.delete(component)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -3,9 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import check_build_read, get_current_user, require_admin
 from app.api.presenters import offer_to_read
 from app.api.routes.components import get_component_or_404
 from app.db.session import get_db
+from app.models.auth import User
 from app.models.domain import RetailOffer
 from app.schemas.common import ErrorResponse
 from app.schemas.component import OfferCreate, OfferRead, OfferReplace
@@ -47,8 +49,10 @@ def list_component_offers(
     limit: int = Query(default=100, ge=1, le=200),
     offset: int = Query(default=0, ge=0, le=2_147_483_647),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> list[OfferRead]:
-    get_component_or_404(db, component_id, build_id=build_id)
+    component = get_component_or_404(db, component_id, build_id=build_id)
+    check_build_read(component.build, user)
     query = (
         select(RetailOffer).where(RetailOffer.component_id == component_id).order_by(RetailOffer.id)
     )
@@ -65,13 +69,18 @@ def list_component_offers(
     status_code=status.HTTP_201_CREATED,
     operation_id="createBuildComponentOffer",
     summary="Sukurti komponento pasiūlymą",
-    description="Prideda pasiūlymą tik nurodyto komplekto komponentui.",
+    description="Tik admin: prideda pasiūlymą matomo komplekto komponentui.",
     responses={**NOT_FOUND, **CONFLICT},
 )
 def create_offer(
-    build_id: int, component_id: int, payload: OfferCreate, db: Session = Depends(get_db)
+    build_id: int,
+    component_id: int,
+    payload: OfferCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_admin),
 ) -> OfferRead:
-    get_component_or_404(db, component_id, build_id=build_id)
+    component = get_component_or_404(db, component_id, build_id=build_id)
+    check_build_read(component.build, user)
     offer = RetailOffer(
         component_id=component_id,
         **payload.model_dump(exclude={"product_url"}),
@@ -90,8 +99,11 @@ def create_offer(
     description="Grąžina pasiūlymą pagal unikalų ID. Komponentas ir komplektas pasiekiami per links.",
     responses=NOT_FOUND,
 )
-def get_offer(offer_id: int, db: Session = Depends(get_db)) -> OfferRead:
+def get_offer(
+    offer_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> OfferRead:
     offer = _get_offer(db, offer_id)
+    check_build_read(offer.component.build, user)
     return offer_to_read(offer, offer.component.build_id)
 
 
@@ -100,15 +112,17 @@ def get_offer(offer_id: int, db: Session = Depends(get_db)) -> OfferRead:
     response_model=OfferRead,
     operation_id="replaceOffer",
     summary="Atnaujinti komponento pasiūlymą",
-    description="Pakeičia pasiūlymo duomenis pagal ID, nekeisdamas jo komponento.",
+    description="Tik admin: pakeičia pasiūlymą matomame komplekte, nekeisdamas jo komponento.",
     responses={**NOT_FOUND, **CONFLICT},
 )
 def replace_offer(
     offer_id: int,
     payload: OfferReplace,
     db: Session = Depends(get_db),
+    user: User = Depends(require_admin),
 ) -> OfferRead:
     offer = _get_offer(db, offer_id)
+    check_build_read(offer.component.build, user)
     offer.retailer = payload.retailer
     offer.price = payload.price
     offer.product_url = str(payload.product_url)
@@ -122,10 +136,14 @@ def replace_offer(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteOffer",
     summary="Pašalinti komponento pasiūlymą",
-    description="Pašalina pasiūlymą pagal unikalų ID; komponentas ir komplektas nešalinami.",
+    description="Tik admin: pašalina pasiūlymą matomame komplekte; komponentas ir komplektas nešalinami.",
     responses=NOT_FOUND,
 )
-def delete_offer(offer_id: int, db: Session = Depends(get_db)) -> Response:
-    db.delete(_get_offer(db, offer_id))
+def delete_offer(
+    offer_id: int, db: Session = Depends(get_db), user: User = Depends(require_admin)
+) -> Response:
+    offer = _get_offer(db, offer_id)
+    check_build_read(offer.component.build, user)
+    db.delete(offer)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

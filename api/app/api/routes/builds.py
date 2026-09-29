@@ -2,8 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.api.dependencies import (
+    check_build_read,
+    check_content_delete,
+    check_owner,
+    get_current_user,
+)
 from app.api.presenters import build_to_read
 from app.db.session import get_db
+from app.models.auth import User
 from app.models.domain import Build, Component
 from app.schemas.build import (
     BuildCreate,
@@ -42,8 +49,10 @@ def list_builds(
     limit: int = Query(default=100, ge=1, le=200),
     offset: int = Query(default=0, ge=0, le=2_147_483_647),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> list[BuildRead]:
     query = _build_query().order_by(Build.id)
+    query = query.where((Build.is_public.is_(True)) | (Build.owner_id == user.id))
     if public_only:
         query = query.where(Build.is_public.is_(True))
     builds = db.scalars(query.offset(offset).limit(limit)).all()
@@ -61,10 +70,13 @@ def list_builds(
         422: {"description": "Neteisingas užklausos turinys."},
     },
 )
-def create_build(payload: BuildCreate, db: Session = Depends(get_db)) -> BuildRead:
+def create_build(
+    payload: BuildCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> BuildRead:
     build = Build(
         name=payload.name,
-        owner_name=payload.owner_name,
+        owner_id=user.id,
+        owner_name=user.username,
         description=payload.description,
         is_public=payload.is_public,
     )
@@ -84,8 +96,12 @@ def create_build(payload: BuildCreate, db: Session = Depends(get_db)) -> BuildRe
     ),
     responses={404: NOT_FOUND},
 )
-def get_build(build_id: int, db: Session = Depends(get_db)) -> BuildRead:
-    return build_to_read(get_build_or_404(db, build_id))
+def get_build(
+    build_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> BuildRead:
+    build = get_build_or_404(db, build_id)
+    check_build_read(build, user)
+    return build_to_read(build)
 
 
 @router.put(
@@ -93,16 +109,21 @@ def get_build(build_id: int, db: Session = Depends(get_db)) -> BuildRead:
     response_model=BuildRead,
     operation_id="replaceBuild",
     summary="Atnaujinti komplektą",
-    description="Pilnai pakeičia komplekto metaduomenis. Komponentai ir atsiliepimai tvarkomi atskirais metodais.",
+    description="Tik savininkas gali pakeisti komplekto metaduomenis. Komponentai ir atsiliepimai tvarkomi atskirais metodais.",
     responses={
         404: NOT_FOUND,
         422: {"description": "Neteisingas turinys."},
     },
 )
-def replace_build(build_id: int, payload: BuildReplace, db: Session = Depends(get_db)) -> BuildRead:
+def replace_build(
+    build_id: int,
+    payload: BuildReplace,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> BuildRead:
     build = get_build_or_404(db, build_id)
+    check_owner(build.owner_id, user)
     build.name = payload.name
-    build.owner_name = payload.owner_name
     build.description = payload.description
     build.is_public = payload.is_public
     db.commit()
@@ -114,11 +135,14 @@ def replace_build(build_id: int, payload: BuildReplace, db: Session = Depends(ge
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteBuild",
     summary="Pašalinti komplektą",
-    description="Pašalina komplektą, jo komponentus, jų pasiūlymus ir atsiliepimus.",
+    description="Savininkas šalina savo komplektą; moderatorius ir admin gali šalinti svetimą viešą komplektą. Kartu pašalinami jo komponentai, pasiūlymai ir atsiliepimai.",
     responses={404: NOT_FOUND},
 )
-def delete_build(build_id: int, db: Session = Depends(get_db)) -> Response:
+def delete_build(
+    build_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     build = get_build_or_404(db, build_id)
+    check_content_delete(build.owner_id, build, user)
     db.delete(build)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
