@@ -60,3 +60,60 @@ def test_role_and_owner_matrix(client, role):
     expected = 403 if role == "user" else 204
     assert client.delete(pub_review["links"]["self"]).status_code == expected
     assert client.delete(public["links"]["self"]).status_code == expected
+
+
+@pytest.mark.parametrize("role", ["user", "moderator", "admin"])
+def test_unpublishing_hides_existing_offers_and_reviews(client, role):
+    admin_auth = client.headers["Authorization"]
+    _, owner_tokens = account(client, "private-owner")
+    use(client, owner_tokens)
+    build = client.post("/api/v1/builds", json={**BUILD_PAYLOAD, "is_public": True}).json()
+    component = client.post(build["links"]["components"], json=COMPONENT_PAYLOAD).json()
+    client.headers["Authorization"] = admin_auth
+    offer = client.post(component["links"]["offers"], json=OFFER_PAYLOAD).json()
+    actor, _ = account(client, "private-reader")
+    assert client.put(f"/api/v1/users/{actor['id']}/role", json={"role": role}).status_code == 200
+    tokens = client.post(
+        "/api/v1/auth/login", json={"username": "private-reader", "password": "very-good-password"}
+    ).json()
+    use(client, tokens)
+    review = client.post(build["links"]["reviews"], json=REVIEW_PAYLOAD).json()
+    assert client.get(offer["links"]["self"]).status_code == 200
+    use(client, owner_tokens)
+    assert client.put(build["links"]["self"], json=BUILD_PAYLOAD).status_code == 200
+    use(client, tokens)
+    for entity in [build, component, offer, review]:
+        for link in entity["links"].values():
+            assert client.get(link).status_code == 404
+    assert client.put(review["links"]["self"], json=REVIEW_PAYLOAD).status_code == 404
+    assert client.delete(review["links"]["self"]).status_code == 404
+    assert client.post(build["links"]["reviews"], json=REVIEW_PAYLOAD).status_code == 404
+    if role == "admin":
+        assert client.put(offer["links"]["self"], json=OFFER_PAYLOAD).status_code == 404
+        assert client.delete(offer["links"]["self"]).status_code == 404
+
+
+def test_demotion_revokes_all_privileged_sessions(client):
+    admin_auth = client.headers["Authorization"]
+    actor, _ = account(client, "demoted")
+    path = f"/api/v1/users/{actor['id']}/role"
+    assert client.put(path, json={"role": "admin"}).status_code == 200
+    credentials = {"username": "demoted", "password": "very-good-password"}
+    sessions = [client.post("/api/v1/auth/login", json=credentials).json() for _ in range(2)]
+    use(client, sessions[0])
+    assert client.get("/api/v1/users").status_code == 200
+    assert client.put(path, json={"role": "user"}).status_code == 403
+    client.headers["Authorization"] = admin_auth
+    assert client.put(path, json={"role": "user"}).status_code == 200
+    for tokens in sessions:
+        use(client, tokens)
+        assert client.get("/api/v1/users").status_code == 401
+        assert (
+            client.post(
+                "/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+            ).status_code
+            == 401
+        )
+    use(client, client.post("/api/v1/auth/login", json=credentials).json())
+    assert client.get("/api/v1/auth/me").json()["role"] == "user"
+    assert client.get("/api/v1/users").status_code == 403

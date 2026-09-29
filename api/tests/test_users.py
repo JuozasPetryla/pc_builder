@@ -84,3 +84,54 @@ def test_admin_cannot_block_or_delete_self(client):
     assert client.put(url + "/status", json={"is_blocked": True}).status_code == 403
     assert client.delete(url).status_code == 403
     assert client.get("/api/v1/auth/me").status_code == 200
+
+
+def test_blocked_account_cannot_use_domain_or_change_block_status(client):
+    import re
+
+    admin_auth = client.headers["Authorization"]
+    user, tokens = account(client, "blocked-user")
+    paths = client.get("/api/openapi.json").json()["paths"]
+    assert (
+        client.put(f"/api/v1/users/{user['id']}/status", json={"is_blocked": True}).status_code
+        == 200
+    )
+    use(client, tokens)
+    for path, methods in paths.items():
+        if "/auth/" in path:
+            continue
+        url = re.sub(r"\{[^}]+\}", str(user["id"]), path)
+        for method in methods:
+            assert client.request(method, url, json={}).status_code == 401, (method, path)
+    client.headers["Authorization"] = admin_auth
+    assert (
+        client.put(f"/api/v1/users/{user['id']}/role", json={"role": "moderator"}).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/api/v1/auth/login",
+            json={"username": "blocked-user", "password": "very-good-password"},
+        ).status_code
+        == 401
+    )
+
+
+def test_account_management_rejects_invalid_inputs(client):
+    user, _ = account(client, "validation-user")
+    path = f"/api/v1/users/{user['id']}"
+    assert client.put(path + "/role", json={"role": "guest"}).status_code == 422
+    assert (
+        client.put(path + "/status", json={"is_blocked": True, "role": "admin"}).status_code == 422
+    )
+    assert client.put("/api/v1/users/999999/status", json={"is_blocked": True}).status_code == 404
+    assert client.put("/api/v1/users/999999/role", json={"role": "user"}).status_code == 404
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"username": "injected", "password": "very-good-password", "is_blocked": False},
+        ).status_code
+        == 422
+    )
+    assert client.get("/api/v1/users?limit=0").status_code == 422
+    assert client.get("/api/v1/users?offset=-1").status_code == 422

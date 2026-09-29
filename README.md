@@ -27,6 +27,7 @@ docker compose up --build --detach --wait
 - Aplikacija: <http://localhost:8080>
 - Swagger: <http://localhost:8000/api/docs>
 - [API dokumentacija](api/README.md)
+- [Funkciniai reikalavimai](FUNKCINIAI_REIKALAVIMAI.md)
 
 Pirmo administratoriaus sukūrimas:
 

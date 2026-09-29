@@ -18,3 +18,6 @@
 
 - 0005_user_status: paskyrų blokavimas; admin sąrašas, blokavimas / atblokavimas ir šalinimas; prisijungusiems viešas profilis (ID, vardas). Šalinimas išsaugo anonimizuotą turinį. Svečio nėra: visi domeno metodai reikalauja prisijungimo.
 - user tvarko savo turinį; moderator/admin gali papildomai šalinti svetimą viešą turinį, bet negali jo redaguoti ar skaityti svetimų privačių komplektų. Tik admin valdo paskyras, roles ir matomų komplektų pasiūlymus. Bendras katalogas neįgyvendintas; komponentus tvarko komplekto savininkas.
+
+- 0006_timestamps: builds/components/retail_offers created_at ir updated_at sulyginti su ORM (timestamp with time zone), senas datas interpretuojant kaip UTC. Auth datos nekeičiamos.
+- Funkciniai reikalavimai: FUNKCINIAI_REIKALAVIMAI.md; atskirai pažymėtos dar neįgyvendintos funkcijos.
