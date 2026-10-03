@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "PC Builder API"
     app_env: str = "development"
+    static_dir: Path | None = None
     database_url: PostgresDsn = PostgresDsn(
         "postgresql+psycopg://pc_builder:change-me@localhost:5432/pc_builder"
     )

@@ -1,0 +1,26 @@
+# Apply after compose.yaml; Docker Compose 2.24.4+.
+services:
+  web:
+    ports: !reset []
+  api:
+    ports: !reset []
+    environment:
+      CORS_ORIGINS: '["https://${DOMAIN:?Set DOMAIN in .env}"]'
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  caddy_data:
+  caddy_config:

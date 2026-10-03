@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 import pytest
 from sqlalchemy import select
-from test_api import BUILD_PAYLOAD, COMPONENT_PAYLOAD, OFFER_PAYLOAD, REVIEW_PAYLOAD
+from test_api import BUILD_PAYLOAD, OFFER_PAYLOAD, REVIEW_PAYLOAD
 
 from app.core.config import settings
 from app.core.security import hash_refresh, password_hash
@@ -163,9 +163,10 @@ def test_ownership_and_private_hierarchy(anonymous_client, seeded_db, public):
     owner, tokens = account(client)
     use(client, tokens)
     build = client.post("/api/v1/builds", json={**BUILD_PAYLOAD, "is_public": public}).json()
-    component = client.post(build["links"]["components"], json=COMPONENT_PAYLOAD).json()
+    selection = {"catalog_component_id": 1}
+    component = client.post(build["links"]["components"], json=selection).json()
     assert client.post(component["links"]["offers"], json=OFFER_PAYLOAD).status_code == 403
-    stored_offer = RetailOffer(component_id=component["id"], **OFFER_PAYLOAD)
+    stored_offer = RetailOffer(component_id=1, retailer="Private test shop", **OFFER_PAYLOAD)
     seeded_db.add(stored_offer)
     seeded_db.commit()
     offer = client.get(f"/api/v1/offers/{stored_offer.id}").json()
@@ -175,12 +176,21 @@ def test_ownership_and_private_hierarchy(anonymous_client, seeded_db, public):
     use(client, other)
     visible = client.get("/api/v1/builds").json()
     assert (build["id"] in [b["id"] for b in visible]) == public
-    for entity in [build, component, offer, review]:
+    for entity in [build, review]:
         for url in entity["links"].values():
             assert client.get(url).status_code == (200 if public else 404)
+    for url in (
+        component["links"]["self"],
+        component["links"]["build"],
+        component["links"]["offers"],
+    ):
+        assert client.get(url).status_code == (200 if public else 404)
+    assert client.get(component["links"]["catalog"]).status_code == 200
+    for url in offer["links"].values():
+        assert client.get(url).status_code == 200
     for entity, payload in [
         (build, BUILD_PAYLOAD),
-        (component, COMPONENT_PAYLOAD),
+        (component, selection),
         (offer, OFFER_PAYLOAD),
         (review, REVIEW_PAYLOAD),
     ]:
@@ -189,12 +199,7 @@ def test_ownership_and_private_hierarchy(anonymous_client, seeded_db, public):
                 403,
                 404,
             ]
-    assert (
-        client.post(
-            build["links"]["components"], json={**COMPONENT_PAYLOAD, "category": "gpu"}
-        ).status_code
-        == 403
-    )
+    assert client.post(build["links"]["components"], json=selection).status_code == 403
     assert client.post(component["links"]["offers"], json=OFFER_PAYLOAD).status_code == 403
     assert client.post(build["links"]["reviews"], json=REVIEW_PAYLOAD).status_code == (
         201 if public else 404
@@ -202,7 +207,7 @@ def test_ownership_and_private_hierarchy(anonymous_client, seeded_db, public):
     use(client, tokens)
     for entity, payload in [
         (build, {**BUILD_PAYLOAD, "is_public": public}),
-        (component, COMPONENT_PAYLOAD),
+        (component, selection),
         (offer, OFFER_PAYLOAD),
         (review, REVIEW_PAYLOAD),
     ]:

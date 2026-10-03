@@ -1,0 +1,38 @@
+# Isolated test of the same image used by Render; no cloud account needed.
+name: pc-builder-cloud-test
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      APP_ENV: test
+      PORT: "10000"
+      DATABASE_URL: postgresql+psycopg://pc_builder:test-only@db:5432/pc_builder
+      JWT_SECRET: local-cloud-test-only-secret-at-least-32-characters
+      CORS_ORIGINS: '[]'
+      BOOTSTRAP_ADMIN_USERNAME: cloud-test-admin
+      BOOTSTRAP_ADMIN_PASSWORD: Local-test-only-password-42
+    ports:
+      - "127.0.0.1:${CLOUD_TEST_PORT:-8090}:10000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:10000/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pc_builder
+      POSTGRES_USER: pc_builder
+      POSTGRES_PASSWORD: test-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pc_builder -d pc_builder"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

@@ -33,24 +33,27 @@ def test_all_crud_operations(client: TestClient) -> None:
         client.put(build_url, json={**BUILD_PAYLOAD, "is_public": True}).json()["is_public"] is True
     )
 
-    response = client.post(components_url, json=COMPONENT_PAYLOAD)
+    catalog = client.post("/api/v1/catalog/components", json=COMPONENT_PAYLOAD)
+    assert catalog.status_code == 201
+    response = client.post(components_url, json={"catalog_component_id": catalog.json()["id"]})
     assert response.status_code == 201
     component = response.json()
     assert component["build_id"] == build["id"]
     component_url = component["links"]["self"]
     assert client.get(components_url).json()[0]["id"] == component["id"]
     assert client.get(component_url).status_code == 200
-    response = client.put(
-        component_url, json={**COMPONENT_PAYLOAD, "description": "Atnaujintas procesorius."}
-    )
+    replacement = client.post(
+        "/api/v1/catalog/components", json={**COMPONENT_PAYLOAD, "model": "Core Ultra 7 Updated"}
+    ).json()
+    response = client.put(component_url, json={"catalog_component_id": replacement["id"]})
     assert response.status_code == 200
-    assert response.json()["description"] == "Atnaujintas procesorius."
+    assert response.json()["model"] == "Core Ultra 7 Updated"
 
     offers_url = component["links"]["offers"]
     response = client.post(offers_url, json=OFFER_PAYLOAD)
     assert response.status_code == 201
     offer = response.json()
-    assert offer["component_id"] == component["id"]
+    assert offer["component_id"] == replacement["id"]
     offer_url = offer["links"]["self"]
     assert client.get(offers_url).json()[0]["id"] == offer["id"]
     assert client.get(offer_url).status_code == 200
@@ -80,10 +83,11 @@ def test_all_crud_operations(client: TestClient) -> None:
 def test_openapi_documents_four_crud_groups(client: TestClient) -> None:
     specification = client.get("/api/openapi.json").json()
     operations = [op for methods in specification["paths"].values() for op in methods.values()]
-    assert len(operations) == 30
+    assert len(operations) == 37
     assert len({op["operationId"] for op in operations}) == len(operations)
     assert all(op.get("summary") and op.get("description") for op in operations)
-    for tag in ("Komplektai", "Komponentai", "Atsiliepimai", "Pardavėjų pasiūlymai"):
+    for tag in ("Komplektai", "Komponentai", "Atsiliepimai", "Katalogas"):
         assert sum(tag in op["tags"] for op in operations) == 5
+    assert sum("Pardavėjų pasiūlymai" in op["tags"] for op in operations) == 7
     assert "/api/v1/builds/{build_id}/components/{component_id}/offers" in specification["paths"]
     assert not any("categories" in path for path in specification["paths"])

@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "PC Builder – Build → Component → RetailOffer",
-    "description": "JWT registracija, prisijungimas, rotacija, atsijungimas ir 20 CRUD operacijų. Sukuria testinį naudotoją; jo paskyra lieka DB, sukurti komplektai pašalinami.",
+    "name": "PC Builder – komplektai ir bendras komponentų katalogas",
+    "description": "JWT registracijos, sesijų ir API smoke testų rinkinys. Komponentai komplektuose pasirenkami iš esamo katalogo; kainų keitimui būtina admin rolė.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -32,6 +32,10 @@
     {
       "key": "otherComponentId",
       "value": ""
+    },
+    {
+      "key": "catalogComponentId",
+      "value": "1"
     }
   ],
   "item": [
@@ -265,6 +269,25 @@
       ]
     },
     {
+      "name": "Pasirinkti esamą katalogo dalį",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/catalog/components?category=cpu&limit=1&offset=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Viešas CPU kataloge', () => pm.expect(pm.response.code).to.eql(200));",
+              "pm.test('Katalogas turi bent vieną viešą CPU įrašą', () => pm.expect(pm.response.json().length).to.be.above(0));",
+              "pm.collectionVariables.set('catalogComponentId', pm.response.json()[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "GET komplektų sąrašas, filtras ir puslapiavimas",
       "request": {
         "method": "GET",
@@ -397,7 +420,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Komplektui priklausantis procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
+          "raw": "{\"catalog_component_id\": {{catalogComponentId}}}"
         }
       },
       "event": [
@@ -414,7 +437,7 @@
       ]
     },
     {
-      "name": "POST tas pats modelis kitame komplekte",
+      "name": "Pasirinkti tą patį katalogo įrašą kitame komplekte",
       "request": {
         "method": "POST",
         "url": "{{baseUrl}}/api/v1/builds/{{otherBuildId}}/components",
@@ -426,7 +449,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Komplektui priklausantis procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
+          "raw": "{\"catalog_component_id\": {{catalogComponentId}}}"
         }
       },
       "event": [
@@ -509,7 +532,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Atnaujintas vieno komplekto procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
+          "raw": "{\"catalog_component_id\": {{catalogComponentId}}}"
         }
       },
       "event": [
@@ -524,7 +547,7 @@
       ]
     },
     {
-      "name": "GET kito komplekto komponentas nepakito",
+      "name": "Kito komplekto pasirinkimas rodo tą patį katalogo įrašą",
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/api/v1/components/{{otherComponentId}}"
@@ -535,7 +558,7 @@
           "script": {
             "exec": [
               "pm.test('200 atsakymas', () => pm.response.to.have.status(200));",
-              "pm.test('Nepriklausomas įrašas', () => pm.expect(pm.response.json().description).to.eql('Komplektui priklausantis procesorius.'));"
+              "pm.test('Nepriklausomas įrašas', () => pm.expect(pm.response.json().catalog_component_id).to.eql(Number(pm.collectionVariables.get('catalogComponentId'))));"
             ]
           }
         }
@@ -554,7 +577,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"category\": \"cpu\", \"manufacturer\": \"AMD\", \"model\": \"Ryzen 7 7800X3D\", \"description\": \"Komplektui priklausantis procesorius.\", \"specifications\": {\"socket\": \"AM5\", \"cores\": 8, \"tdp_watts\": 120}}"
+          "raw": "{\"catalog_component_id\": {{catalogComponentId}}}"
         }
       },
       "event": [

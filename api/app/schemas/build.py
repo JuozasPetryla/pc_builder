@@ -12,7 +12,7 @@ class BuildInput(ApiInput):
     description: str | None = Field(default=None, max_length=2000)
     is_public: bool = Field(
         default=False,
-        description="Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – savininkas ir administratorius.",
+        description="Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – tik savininkas.",
     )
 
 

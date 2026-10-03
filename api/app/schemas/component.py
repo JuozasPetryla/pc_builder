@@ -36,7 +36,6 @@ class OfferRead(BaseModel):
 class OfferLinks(BaseModel):
     self: str
     component: str
-    build: str
 
 
 class OfferCreate(OfferInput):
@@ -70,9 +69,28 @@ class ComponentReplace(ComponentInput):
     pass
 
 
+class ComponentSelection(ApiInput):
+    catalog_component_id: int = Field(gt=0)
+
+
+class CatalogLinks(BaseModel):
+    self: str
+    offers: str
+
+
+class CatalogComponentRead(ComponentInput):
+    id: int
+    offers: list[OfferRead]
+    created_at: datetime
+    updated_at: datetime
+    legacy: bool
+    links: CatalogLinks
+
+
 class ComponentRead(BaseModel):
     id: int
     build_id: int
+    catalog_component_id: int
     category: ComponentCategory
     manufacturer: str
     model: str
@@ -85,6 +103,7 @@ class ComponentRead(BaseModel):
 
 
 class ComponentLinks(BaseModel):
+    catalog: str
     self: str
     build: str
     offers: str

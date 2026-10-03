@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import check_build_read, check_owner, get_current_user
 from app.api.presenters import component_to_read
 from app.api.routes.builds import get_build_or_404
+from app.api.routes.catalog import get_catalog_or_404
 from app.db.session import get_db
 from app.models.auth import User
 from app.models.domain import Component, ComponentCategory
 from app.schemas.common import ErrorResponse
-from app.schemas.component import ComponentCreate, ComponentRead, ComponentReplace
+from app.schemas.component import ComponentRead, ComponentSelection
 
 router = APIRouter(tags=["Komponentai"])
 NOT_FOUND = {
@@ -70,18 +71,23 @@ def list_components(
     response_model=ComponentRead,
     status_code=status.HTTP_201_CREATED,
     operation_id="createBuildComponent",
-    summary="Sukurti komplekto komponentą",
-    description="Sukuria tik šiam komplektui priklausantį komponentą. Kategorija komplekte nesikartoja.",
+    summary="Pridėti katalogo komponentą į komplektą",
+    description="Savininkas pasirenka esamą katalogo komponentą. Kategorija komplekte nesikartoja.",
     responses={**NOT_FOUND, **CONFLICT},
 )
 def create_component(
     build_id: int,
-    payload: ComponentCreate,
+    payload: ComponentSelection,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ComponentRead:
     check_owner(get_build_or_404(db, build_id).owner_id, user)
-    component = Component(build_id=build_id, **payload.model_dump())
+    catalog = get_catalog_or_404(db, payload.catalog_component_id, user)
+    if catalog.legacy_build_id is not None:
+        raise HTTPException(
+            409, "Senas privataus komplekto komponentas nėra bendro katalogo dalis."
+        )
+    component = Component(build_id=build_id, catalog=catalog, category=catalog.category)
     db.add(component)
     _commit_component(db)
     return component_to_read(component)
@@ -108,19 +114,22 @@ def get_component(
     response_model=ComponentRead,
     operation_id="replaceComponent",
     summary="Atnaujinti komplekto komponentą",
-    description="Pakeičia komponento duomenis, nekeisdamas jo komplekto ar pasiūlymų.",
+    description="Savininkas pakeičia pasirinktą katalogo komponentą; bendrų specifikacijų nekeičia.",
     responses={**NOT_FOUND, **CONFLICT},
 )
 def replace_component(
     component_id: int,
-    payload: ComponentReplace,
+    payload: ComponentSelection,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ComponentRead:
     component = get_component_or_404(db, component_id)
     check_owner(component.build.owner_id, user)
-    for field, value in payload.model_dump().items():
-        setattr(component, field, value)
+    catalog = get_catalog_or_404(db, payload.catalog_component_id, user)
+    if catalog.legacy_build_id is not None:
+        raise HTTPException(409, "Pasirinkite bendro katalogo komponentą.")
+    component.catalog = catalog
+    component.category = catalog.category
     _commit_component(db)
     return component_to_read(component)
 
@@ -130,7 +139,7 @@ def replace_component(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteComponent",
     summary="Pašalinti komplekto komponentą",
-    description="Pašalina šio komplekto komponentą ir jo pasiūlymus; kitų komplektų neliečia.",
+    description="Pašalina tik pasirinkimą iš komplekto; katalogo komponentas ir jo pasiūlymai išlieka.",
     responses=NOT_FOUND,
 )
 def delete_component(

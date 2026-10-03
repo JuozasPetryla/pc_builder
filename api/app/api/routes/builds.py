@@ -11,7 +11,7 @@ from app.api.dependencies import (
 from app.api.presenters import build_to_read
 from app.db.session import get_db
 from app.models.auth import User
-from app.models.domain import Build, Component
+from app.models.domain import Build, CatalogComponent, Component
 from app.schemas.build import (
     BuildCreate,
     BuildRead,
@@ -25,7 +25,9 @@ NOT_FOUND = {"model": ErrorResponse, "description": "Komplektas nerastas."}
 
 def _build_query():
     return select(Build).options(
-        selectinload(Build.components).selectinload(Component.offers),
+        selectinload(Build.components)
+        .joinedload(Component.catalog)
+        .selectinload(CatalogComponent.offers),
         selectinload(Build.reviews),
     )
 
@@ -65,7 +67,7 @@ def list_builds(
     status_code=status.HTTP_201_CREATED,
     operation_id="createBuild",
     summary="Sukurti kompiuterio komplektą",
-    description="Sukuria komplektą; jam priklausantys komponentai kuriami per komponentų API.",
+    description="Sukuria komplektą; jam pasirenkami esami bendro katalogo komponentai.",
     responses={
         422: {"description": "Neteisingas užklausos turinys."},
     },
@@ -135,7 +137,7 @@ def replace_build(
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="deleteBuild",
     summary="Pašalinti komplektą",
-    description="Savininkas šalina savo komplektą; moderatorius ir admin gali šalinti svetimą viešą komplektą. Kartu pašalinami jo komponentai, pasiūlymai ir atsiliepimai.",
+    description="Savininkas šalina savo komplektą; moderatorius ir admin gali šalinti svetimą viešą komplektą. Kartu pašalinami jo komponentų pasirinkimai ir atsiliepimai; katalogas ir pasiūlymai išlieka.",
     responses={404: NOT_FOUND},
 )
 def delete_build(

@@ -6,12 +6,14 @@ from test_auth import account, use
 @pytest.mark.parametrize("role", ["user", "moderator", "admin"])
 def test_role_and_owner_matrix(client, role):
     admin_auth = client.headers["Authorization"]
+    catalog = client.post("/api/v1/catalog/components", json=COMPONENT_PAYLOAD).json()
     owner, owner_tokens = account(client, "owner")
     use(client, owner_tokens)
     public = client.post("/api/v1/builds", json={**BUILD_PAYLOAD, "is_public": True}).json()
     private = client.post("/api/v1/builds", json=BUILD_PAYLOAD).json()
-    pub_component = client.post(public["links"]["components"], json=COMPONENT_PAYLOAD).json()
-    priv_component = client.post(private["links"]["components"], json=COMPONENT_PAYLOAD).json()
+    selection = {"catalog_component_id": catalog["id"]}
+    pub_component = client.post(public["links"]["components"], json=selection).json()
+    priv_component = client.post(private["links"]["components"], json=selection).json()
     pub_review = client.post(public["links"]["reviews"], json=REVIEW_PAYLOAD).json()
     priv_review = client.post(private["links"]["reviews"], json=REVIEW_PAYLOAD).json()
     actor, _ = account(client, "actor")
@@ -23,13 +25,16 @@ def test_role_and_owner_matrix(client, role):
     use(client, tokens)
     visible = [b["id"] for b in client.get("/api/v1/builds").json()]
     assert public["id"] in visible and private["id"] not in visible
-    for entity in [private, priv_component, priv_review]:
+    for entity in [private, priv_review]:
         for link in entity["links"].values():
             assert client.get(link).status_code == 404
         assert client.delete(entity["links"]["self"]).status_code in (403, 404)
+    assert client.get(priv_component["links"]["self"]).status_code == 404
+    assert client.get(priv_component["links"]["build"]).status_code == 404
+    assert client.get(priv_component["links"]["catalog"]).status_code == 200
     for entity, payload in [
         (public, BUILD_PAYLOAD),
-        (pub_component, COMPONENT_PAYLOAD),
+        (pub_component, selection),
         (pub_review, REVIEW_PAYLOAD),
     ]:
         assert client.put(entity["links"]["self"], json=payload).status_code == 403
@@ -63,12 +68,15 @@ def test_role_and_owner_matrix(client, role):
 
 
 @pytest.mark.parametrize("role", ["user", "moderator", "admin"])
-def test_unpublishing_hides_existing_offers_and_reviews(client, role):
+def test_unpublishing_hides_private_build_but_preserves_shared_catalog_offer(client, role):
     admin_auth = client.headers["Authorization"]
+    catalog = client.post("/api/v1/catalog/components", json=COMPONENT_PAYLOAD).json()
     _, owner_tokens = account(client, "private-owner")
     use(client, owner_tokens)
     build = client.post("/api/v1/builds", json={**BUILD_PAYLOAD, "is_public": True}).json()
-    component = client.post(build["links"]["components"], json=COMPONENT_PAYLOAD).json()
+    component = client.post(
+        build["links"]["components"], json={"catalog_component_id": catalog["id"]}
+    ).json()
     client.headers["Authorization"] = admin_auth
     offer = client.post(component["links"]["offers"], json=OFFER_PAYLOAD).json()
     actor, _ = account(client, "private-reader")
@@ -82,15 +90,20 @@ def test_unpublishing_hides_existing_offers_and_reviews(client, role):
     use(client, owner_tokens)
     assert client.put(build["links"]["self"], json=BUILD_PAYLOAD).status_code == 200
     use(client, tokens)
-    for entity in [build, component, offer, review]:
+    for entity in [build, review]:
         for link in entity["links"].values():
             assert client.get(link).status_code == 404
+    assert client.get(component["links"]["self"]).status_code == 404
+    assert client.get(component["links"]["build"]).status_code == 404
+    assert client.get(component["links"]["catalog"]).status_code == 200
+    assert client.get(offer["links"]["self"]).status_code == 200
     assert client.put(review["links"]["self"], json=REVIEW_PAYLOAD).status_code == 404
     assert client.delete(review["links"]["self"]).status_code == 404
     assert client.post(build["links"]["reviews"], json=REVIEW_PAYLOAD).status_code == 404
     if role == "admin":
-        assert client.put(offer["links"]["self"], json=OFFER_PAYLOAD).status_code == 404
-        assert client.delete(offer["links"]["self"]).status_code == 404
+        assert client.put(offer["links"]["self"], json=OFFER_PAYLOAD).status_code == 200
+    else:
+        assert client.put(offer["links"]["self"], json=OFFER_PAYLOAD).status_code == 403
 
 
 def test_demotion_revokes_all_privileged_sessions(client):

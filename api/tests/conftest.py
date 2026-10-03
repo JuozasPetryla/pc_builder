@@ -18,7 +18,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models.auth import AuthSession, User
-from app.models.domain import Build, Component, RetailOffer, Review
+from app.models.domain import Build, CatalogComponent, Component, RetailOffer, Review
 
 
 @pytest.fixture()
@@ -66,22 +66,29 @@ def seeded_db(db: Session) -> Session:
         ("cpu", "AMD", "Ryzen 7 7800X3D", {"socket": "AM5", "cores": 8, "tdp_watts": 120}),
     ]
     for index, (category, manufacturer, model, specifications) in enumerate(data, start=1):
+        catalog = CatalogComponent(
+            id=index,
+            category=category,
+            manufacturer=manufacturer,
+            model=model,
+            specifications=specifications,
+        )
+        db.add(catalog)
         db.add(
             Component(
                 id=index,
                 build_id=1 if index <= 8 else 2,
+                catalog_component_id=index,
                 category=category,
-                manufacturer=manufacturer,
-                model=model,
-                specifications=specifications,
-                offers=[
-                    RetailOffer(
-                        retailer="Demo parduotuvė",
-                        price=Decimal("100.00") + index,
-                        product_url=f"https://example.com/{index}",
-                        in_stock=True,
-                    )
-                ],
+            )
+        )
+        db.add(
+            RetailOffer(
+                component_id=index,
+                retailer="Demo parduotuvė",
+                price=Decimal("100.00") + index,
+                product_url=f"https://example.com/{index}",
+                in_stock=True,
             )
         )
     db.add(

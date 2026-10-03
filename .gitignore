@@ -17,3 +17,19 @@ dist/
 .idea/
 .vscode/
 
+
+# Browser test artifacts
+web/test-results/
+web/playwright-report/
+backup*.sql
+
+# Local Terraform configuration, plans, and state contain credentials.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+crash.log
+crash.*.log
+deploy/terraform/.credentials.env

@@ -95,7 +95,7 @@
           "Komplektai"
         ],
         "summary": "Sukurti kompiuterio komplektą",
-        "description": "Sukuria komplektą; jam priklausantys komponentai kuriami per komponentų API.",
+        "description": "Sukuria komplektą; jam pasirenkami esami bendro katalogo komponentai.",
         "operationId": "createBuild",
         "security": [
           {
@@ -268,7 +268,7 @@
           "Komplektai"
         ],
         "summary": "Pašalinti komplektą",
-        "description": "Savininkas šalina savo komplektą; moderatorius ir admin gali šalinti svetimą viešą komplektą. Kartu pašalinami jo komponentai, pasiūlymai ir atsiliepimai.",
+        "description": "Savininkas šalina savo komplektą; moderatorius ir admin gali šalinti svetimą viešą komplektą. Kartu pašalinami jo komponentų pasirinkimai ir atsiliepimai; katalogas ir pasiūlymai išlieka.",
         "operationId": "deleteBuild",
         "security": [
           {
@@ -430,8 +430,8 @@
         "tags": [
           "Komponentai"
         ],
-        "summary": "Sukurti komplekto komponentą",
-        "description": "Sukuria tik šiam komplektui priklausantį komponentą. Kategorija komplekte nesikartoja.",
+        "summary": "Pridėti katalogo komponentą į komplektą",
+        "description": "Savininkas pasirenka esamą katalogo komponentą. Kategorija komplekte nesikartoja.",
         "operationId": "createBuildComponent",
         "security": [
           {
@@ -454,7 +454,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ComponentCreate"
+                "$ref": "#/components/schemas/ComponentSelection"
               }
             }
           }
@@ -577,7 +577,7 @@
           "Komponentai"
         ],
         "summary": "Atnaujinti komplekto komponentą",
-        "description": "Pakeičia komponento duomenis, nekeisdamas jo komplekto ar pasiūlymų.",
+        "description": "Savininkas pakeičia pasirinktą katalogo komponentą; bendrų specifikacijų nekeičia.",
         "operationId": "replaceComponent",
         "security": [
           {
@@ -600,7 +600,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ComponentReplace"
+                "$ref": "#/components/schemas/ComponentSelection"
               }
             }
           }
@@ -659,7 +659,7 @@
           "Komponentai"
         ],
         "summary": "Pašalinti komplekto komponentą",
-        "description": "Pašalina šio komplekto komponentą ir jo pasiūlymus; kitų komplektų neliečia.",
+        "description": "Pašalina tik pasirinkimą iš komplekto; katalogo komponentas ir jo pasiūlymai išlieka.",
         "operationId": "deleteComponent",
         "security": [
           {
@@ -1283,7 +1283,7 @@
           "Pardavėjų pasiūlymai"
         ],
         "summary": "Gauti komponento pasiūlymą",
-        "description": "Grąžina pasiūlymą pagal unikalų ID. Komponentas ir komplektas pasiekiami per links.",
+        "description": "Grąžina pasiūlymą pagal unikalų ID. Bendro katalogo komponentas pasiekiamas per links.",
         "operationId": "getOffer",
         "security": [
           {
@@ -1345,7 +1345,7 @@
           "Pardavėjų pasiūlymai"
         ],
         "summary": "Atnaujinti komponento pasiūlymą",
-        "description": "Tik admin: pakeičia pasiūlymą matomame komplekte, nekeisdamas jo komponento.",
+        "description": "Tik admin: pakeičia bendrą pasiūlymą; nauja kaina matoma visuose jį naudojančiuose komplektuose.",
         "operationId": "replaceOffer",
         "security": [
           {
@@ -1427,7 +1427,7 @@
           "Pardavėjų pasiūlymai"
         ],
         "summary": "Pašalinti komponento pasiūlymą",
-        "description": "Tik admin: pašalina pasiūlymą matomame komplekte; komponentas ir komplektas nešalinami.",
+        "description": "Tik admin: pašalina bendrą pasiūlymą, nekeisdamas katalogo komponento ar komplektų.",
         "operationId": "deleteOffer",
         "security": [
           {
@@ -1464,6 +1464,166 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/components/{component_id}/offers": {
+      "get": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Gauti katalogo komponento pasiūlymus",
+        "description": "Prisijungusiems: bendri pasiūlymai su prieinamumo filtru ir puslapiavimu.",
+        "operationId": "list_catalog_offers_api_v1_catalog_components__component_id__offers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          },
+          {
+            "name": "in_stock",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "In Stock"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OfferRead"
+                  },
+                  "title": "Response List Catalog Offers Api V1 Catalog Components  Component Id  Offers Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pardavėjų pasiūlymai"
+        ],
+        "summary": "Sukurti bendrą pardavėjo pasiūlymą",
+        "description": "Tik administratorius kuria katalogo komponento pasiūlymą; komplekto nereikia.",
+        "operationId": "create_catalog_offer_api_v1_catalog_components__component_id__offers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
           },
           "422": {
             "description": "Validation Error",
@@ -1980,6 +2140,318 @@
           }
         }
       }
+    },
+    "/api/v1/catalog/components": {
+      "get": {
+        "tags": [
+          "Katalogas"
+        ],
+        "summary": "Gauti komponentų katalogą",
+        "description": "Visiems prisijungusiems: bendras katalogas su paieška, kategorijos filtru ir puslapiavimu.",
+        "operationId": "list_catalog_api_v1_catalog_components_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ComponentCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogComponentRead"
+                  },
+                  "title": "Response List Catalog Api V1 Catalog Components Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Katalogas"
+        ],
+        "summary": "Sukurti katalogo komponentą",
+        "description": "Tik administratorius sukuria bendro katalogo komponentą; komplekto kurti nereikia.",
+        "operationId": "create_catalog_api_v1_catalog_components_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogComponentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/components/{component_id}": {
+      "get": {
+        "tags": [
+          "Katalogas"
+        ],
+        "summary": "Gauti katalogo komponentą",
+        "description": "Prisijungusiems grąžina bendras specifikacijas ir pasiūlymus. Seni privatūs duomenys išlaiko savo prieigos ribas.",
+        "operationId": "get_catalog_api_v1_catalog_components__component_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogComponentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Katalogas"
+        ],
+        "summary": "Atnaujinti katalogo komponentą",
+        "description": "Tik administratorius; pakeitimai matomi visuose komplektuose. Naudojamo komponento kategorija nekeičiama.",
+        "operationId": "replace_catalog_api_v1_catalog_components__component_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogComponentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Katalogas"
+        ],
+        "summary": "Pašalinti katalogo komponentą",
+        "description": "Tik administratorius; jei komponentas pasirinktas komplekte, grąžina 409. Nenaudojamas komponentas šalinamas su pasiūlymais.",
+        "operationId": "delete_catalog_api_v1_catalog_components__component_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "component_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Component Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Reikalingas galiojantis access žetonas."
+          },
+          "403": {
+            "description": "Nepakanka rolės arba įrašo nuosavybės teisių."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2010,7 +2482,7 @@
           "is_public": {
             "type": "boolean",
             "title": "Is Public",
-            "description": "Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – savininkas ir administratorius.",
+            "description": "Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – tik savininkas.",
             "default": false
           }
         },
@@ -2154,7 +2626,7 @@
           "is_public": {
             "type": "boolean",
             "title": "Is Public",
-            "description": "Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – savininkas ir administratorius.",
+            "description": "Viešą komplektą gali skaityti visi prisijungę naudotojai; privatų – tik savininkas.",
             "default": false
           }
         },
@@ -2164,6 +2636,122 @@
           "name"
         ],
         "title": "BuildReplace"
+      },
+      "CatalogComponentRead": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/ComponentCategory",
+            "description": "Komponento tipas. Viename komplekte — vienas komponentas kiekvienai kategorijai.",
+            "examples": [
+              "cpu"
+            ]
+          },
+          "manufacturer": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Manufacturer",
+            "examples": [
+              "AMD"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Model",
+            "examples": [
+              "Ryzen 7 7800X3D"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "specifications": {
+            "additionalProperties": true,
+            "type": "object",
+            "minProperties": 1,
+            "title": "Specifications",
+            "description": "Netuščias JSON objektas; kategorijai specifiniai raktai nėra privalomi.",
+            "examples": [
+              {
+                "cores": 8,
+                "socket": "AM5",
+                "tdp_w": 120
+              }
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/OfferRead"
+            },
+            "type": "array",
+            "title": "Offers"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "legacy": {
+            "type": "boolean",
+            "title": "Legacy"
+          },
+          "links": {
+            "$ref": "#/components/schemas/CatalogLinks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category",
+          "manufacturer",
+          "model",
+          "specifications",
+          "id",
+          "offers",
+          "created_at",
+          "updated_at",
+          "legacy",
+          "links"
+        ],
+        "title": "CatalogComponentRead"
+      },
+      "CatalogLinks": {
+        "properties": {
+          "self": {
+            "type": "string",
+            "title": "Self"
+          },
+          "offers": {
+            "type": "string",
+            "title": "Offers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "self",
+          "offers"
+        ],
+        "title": "CatalogLinks"
       },
       "ComponentCategory": {
         "type": "string",
@@ -2245,6 +2833,10 @@
       },
       "ComponentLinks": {
         "properties": {
+          "catalog": {
+            "type": "string",
+            "title": "Catalog"
+          },
           "self": {
             "type": "string",
             "title": "Self"
@@ -2260,6 +2852,7 @@
         },
         "type": "object",
         "required": [
+          "catalog",
           "self",
           "build",
           "offers"
@@ -2275,6 +2868,10 @@
           "build_id": {
             "type": "integer",
             "title": "Build Id"
+          },
+          "catalog_component_id": {
+            "type": "integer",
+            "title": "Catalog Component Id"
           },
           "category": {
             "$ref": "#/components/schemas/ComponentCategory"
@@ -2328,6 +2925,7 @@
         "required": [
           "id",
           "build_id",
+          "catalog_component_id",
           "category",
           "manufacturer",
           "model",
@@ -2403,6 +3001,21 @@
           "specifications"
         ],
         "title": "ComponentReplace"
+      },
+      "ComponentSelection": {
+        "properties": {
+          "catalog_component_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Catalog Component Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "catalog_component_id"
+        ],
+        "title": "ComponentSelection"
       },
       "Credentials": {
         "properties": {
@@ -2516,17 +3129,12 @@
           "component": {
             "type": "string",
             "title": "Component"
-          },
-          "build": {
-            "type": "string",
-            "title": "Build"
           }
         },
         "type": "object",
         "required": [
           "self",
-          "component",
-          "build"
+          "component"
         ],
         "title": "OfferLinks"
       },

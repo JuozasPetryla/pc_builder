@@ -7,4 +7,16 @@
 **/.venv
 **/node_modules
 **/dist
-
+**/.env
+**/.env.*
+**/.terraform
+**/*.tfstate*
+**/*.tfvars
+**/*.tfvars.json
+**/*.tfplan
+**/test-results
+**/playwright-report
+**/backup*.sql
+.aws
+.codex
+.agents

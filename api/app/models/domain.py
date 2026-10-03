@@ -10,6 +10,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Integer,
     Numeric,
     String,
@@ -32,22 +33,44 @@ class ComponentCategory(StrEnum):
     COOLER = "cooler"
 
 
-class Component(TimestampMixin, Base):
-    __tablename__ = "components"
-    __table_args__ = (UniqueConstraint("build_id", "category", name="uq_component_build_category"),)
+class CatalogComponent(TimestampMixin, Base):
+    __tablename__ = "catalog_components"
+    __table_args__ = (UniqueConstraint("id", "category", name="uq_catalog_id_category"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    build_id: Mapped[int] = mapped_column(ForeignKey("builds.id", ondelete="CASCADE"), index=True)
     category: Mapped[str] = mapped_column(String(32), index=True)
     manufacturer: Mapped[str] = mapped_column(String(80))
     model: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text)
     specifications: Mapped[dict] = mapped_column(JSON, default=dict)
-
-    build: Mapped[Build] = relationship(back_populates="components")
+    # Old private component data must not become a public catalog entry.
+    legacy_build_id: Mapped[int | None] = mapped_column(
+        ForeignKey("builds.id", ondelete="CASCADE"), index=True
+    )
     offers: Mapped[list[RetailOffer]] = relationship(
         back_populates="component", cascade="all, delete-orphan", lazy="selectin"
     )
+
+
+class Component(TimestampMixin, Base):
+    """One selection in a build, referencing shared catalog data."""
+
+    __tablename__ = "components"
+    __table_args__ = (
+        UniqueConstraint("build_id", "category", name="uq_component_build_category"),
+        ForeignKeyConstraint(
+            ["catalog_component_id", "category"],
+            ["catalog_components.id", "catalog_components.category"],
+            name="fk_component_catalog_category",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    build_id: Mapped[int] = mapped_column(ForeignKey("builds.id", ondelete="CASCADE"), index=True)
+    catalog_component_id: Mapped[int] = mapped_column(index=True)
+    category: Mapped[str] = mapped_column(String(32), index=True)
+    build: Mapped[Build] = relationship(back_populates="components", foreign_keys=[build_id])
+    catalog: Mapped[CatalogComponent] = relationship(lazy="joined")
 
 
 class RetailOffer(TimestampMixin, Base):
@@ -59,14 +82,14 @@ class RetailOffer(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     component_id: Mapped[int] = mapped_column(
-        ForeignKey("components.id", ondelete="CASCADE"), index=True
+        ForeignKey("catalog_components.id", ondelete="CASCADE"), index=True
     )
     retailer: Mapped[str] = mapped_column(String(100))
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     product_url: Mapped[str] = mapped_column(String(500))
     in_stock: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    component: Mapped[Component] = relationship(back_populates="offers")
+    component: Mapped[CatalogComponent] = relationship(back_populates="offers")
 
 
 class Build(TimestampMixin, Base):

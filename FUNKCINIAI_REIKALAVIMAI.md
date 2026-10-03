@@ -56,22 +56,23 @@ Neprisijungęs lankytojas negalės naudotis komplektavimo, komplektų peržiūro
 
 1. Registruojantis automatiškai suteikiama `user` rolė; naudotojas negali pats pasirinkti aukštesnių teisių;
 2. Veiksmai leidžiami pagal naudotojo rolę ir konkretaus įrašo savininko ar autoriaus identifikatorių;
-3. Nė viena rolė negali redaguoti svetimo komplekto, jo komponentų ar komentaro;
+3. Nė viena rolė negali redaguoti svetimo komplekto, jo pasirinkimų ar komentaro; administratorius keičia tik bendrą katalogo įrašą;
 4. Nė viena rolė negali peržiūrėti ar šalinti svetimo privataus komplekto ir jo turinio;
 5. Moderatorius negali valdyti naudotojų paskyrų, rolių, katalogo ar pardavėjų pasiūlymų;
 6. Administratorius negali keisti savo rolės, blokuoti ar pašalinti savo paskyros;
 7. Užblokavus paskyrą nutraukiamos visos jos prisijungimo sesijos; užblokuotas naudotojas negali prisijungti. Atblokavus būtina prisijungti iš naujo;
 8. Pakeitus naudotojo rolę nutraukiamos visos jo prisijungimo sesijos;
 9. Pašalinus paskyrą jos komplektai ir atsiliepimai išsaugomi be ryšio su paskyra, su autoriaus žyma „Pašalintas naudotojas“. Privatūs komplektai netampa vieši;
-10. Pašalinus komplektą pašalinami jo komponentai, jų pasiūlymai ir komplekto atsiliepimai. Pašalinus komponentą pašalinami jo pasiūlymai.
+10. Pašalinus komplektą pašalinami jo pasirinkimai ir atsiliepimai. Bendri katalogo įrašai bei pardavėjų pasiūlymai išlieka kitiems komplektams.
 
 ## 1.3. Dabartinio įgyvendinimo ribos
 
 Šiame dokumente aprašyti visos sistemos funkciniai reikalavimai. Dabartinė realizacija dar neapima visų jų:
 
 - API įgyvendintos registracijos, prisijungimo, atsijungimo, trijų rolių, nuosavybės, privatumo, paskyrų administravimo, komplektų, komponentų, pasiūlymų ir atsiliepimų valdymo funkcijos;
-- Bendras dalių katalogas dar neįgyvendintas. Dabartiniai komponentai priklauso konkrečiam komplektui ir yra tvarkomi jo savininko. Būsimo bendro katalogo įrašus tvarkys tik administratorius;
-- Pasiūlymus ir kainas dabar gali keisti tik administratorius, tik jam matomuose komplektuose. Svetimų privačių komplektų pasiūlymai jam neprieinami;
+- Administratorius tvarko bendrą dalių katalogą, naudotojai į komplektus įtraukia jau esamus katalogo įrašus. Komponento specifikacijų ir pasiūlymų pakeitimai bendri visiems jį pasirinkusiems komplektams;
+- Seni privatūs komponentai migracijos metu išsaugomi ir neįtraukiami į viešą katalogą;
 - Dalių suderinamumo tikrinimas ir bendros komplekto kainos apskaičiavimas dar neįgyvendinti; API pateikia atskirų dalių pardavėjų pasiūlymus;
 - Atsiliepimą šiuo metu sudaro kartu pateikiamas 1–5 balų įvertinimas ir tekstinis komentaras;
-- Internetinė naudotojo sąsaja yra pradinė struktūra. API galimybės pasiekiamos per Swagger ar kitą API klientą; komplektavimo sąsaja ir dalijimosi nuorodomis funkcija internetinėje aplikacijoje dar numatytos įgyvendinti.
+- React sąsajoje pasiekiamos visos įgyvendintos API operacijos, įskaitant registraciją, prisijungimą, žetonų atnaujinimą, domeno objektų CRUD ir paskyrų administravimą. Viešų komplektų nuorodas galima kopijuoti ir atidaryti prisijungus; veikia modalinės formos, filtrai, puslapiavimas ir mobili navigacija;
+- Render Blueprint ir Neon Terraform paruošti, tačiau faktinis publikavimas dėl paskyrų, prieigos raktų ir repozitorijos teisių trūkumo dar neatliktas. Pateiktų sąsajos kriterijų atitiktis aprašyta [reikalavimų patikroje](REIKALAVIMU_PATIKRA.md).

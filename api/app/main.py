@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.web import mount_frontend
 
 OPENAPI_TAGS = [
     {
@@ -61,3 +62,12 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+
+@app.get("/healthz", include_in_schema=False)
+def health():
+    # Platform probes must not keep Neon's database compute awake.
+    return {"status": "ok"}
+
+
+mount_frontend(app, settings.static_dir)
