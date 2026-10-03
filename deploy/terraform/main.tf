@@ -14,7 +14,6 @@ resource "neon_project" "database" {
   history_retention_seconds = 21600
   autoscaling_limit_min_cu  = 0.25
   autoscaling_limit_max_cu  = 0.25
-  suspend_timeout_seconds   = 300
 
   branch {
     name          = "production"
@@ -25,7 +24,6 @@ resource "neon_project" "database" {
   primary_compute {
     autoscaling_limit_min_cu = 0.25
     autoscaling_limit_max_cu = 0.25
-    suspend_timeout_seconds  = 300
   }
 
   lifecycle {
