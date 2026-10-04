@@ -54,7 +54,9 @@ Build → Component pasirinkimas → CatalogComponent → RetailOffer
 
 ### 2.1. Diegimo diagrama
 
-**[PLACEHOLDER: įterpti UML deployment diagramą, vaizduojančią numatomą diegimą.]**
+![PC Builder numatoma UML diegimo diagrama](docs/deployment.svg)
+
+Redaguojamas Draw.io failas: [`docs/deployment.drawio`](docs/deployment.drawio).
 
 Render Docker servisas pateikia naudotojo sąsają ir API, o Neon teikia PostgreSQL duomenų bazę. Projekto dokumentacijoje faktinis publikavimas dar nepatvirtintas.
 

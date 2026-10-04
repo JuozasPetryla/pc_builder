@@ -1,0 +1,37 @@
+<mxfile host="app.diagrams.net" modified="2026-10-04T18:00:00.000Z" agent="OpenAI Codex" version="25.0.3" type="device">
+  <diagram id="pc-builder-deployment" name="Diegimo diagrama">
+    <mxGraphModel dx="1200" dy="630" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="630" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="browser" value="&amp;laquo;device&amp;raquo;&lt;br&gt;&lt;b&gt;Naudotojo kompiuteris&lt;/b&gt;&lt;hr&gt;&amp;laquo;artifact&amp;raquo;&lt;br&gt;Naršyklė" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#475569;fillColor=#F8FAFC;fontColor=#0F172A;fontSize=16;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="225" width="230" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="render" value="&amp;laquo;node&amp;raquo;&lt;br&gt;&lt;b&gt;Render Cloud&lt;/b&gt;&lt;br&gt;Frankfurt region" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#334155;fillColor=#F1F5F9;fontColor=#0F172A;fontSize=16;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="70" width="500" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime" value="&amp;laquo;executionEnvironment&amp;raquo;&lt;br&gt;&lt;b&gt;Docker konteineris&lt;/b&gt;&lt;br&gt;Render Web Service: pc-builder" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#0F766E;fillColor=#ECFDF5;fontColor=#134E4A;fontSize=15;shadow=1;" vertex="1" parent="render">
+          <mxGeometry x="35" y="105" width="430" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="frontend" value="&amp;laquo;artifact&amp;raquo;&lt;br&gt;&lt;b&gt;React dist/&lt;/b&gt;&lt;br&gt;Statinė naudotojo sąsaja" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeColor=#64748B;fillColor=#FFFFFF;fontColor=#0F172A;fontSize=14;" vertex="1" parent="runtime">
+          <mxGeometry x="25" y="125" width="175" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="&amp;laquo;artifact&amp;raquo;&lt;br&gt;&lt;b&gt;FastAPI app/&lt;/b&gt;&lt;br&gt;REST API&lt;br&gt;SQLAlchemy ORM" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeColor=#64748B;fillColor=#FFFFFF;fontColor=#0F172A;fontSize=14;" vertex="1" parent="runtime">
+          <mxGeometry x="225" y="125" width="175" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="neon" value="&amp;laquo;node&amp;raquo;&lt;br&gt;&lt;b&gt;Neon Cloud&lt;/b&gt;&lt;br&gt;Valdoma duomenų bazės paslauga" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#334155;fillColor=#F1F5F9;fontColor=#0F172A;fontSize=16;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="910" y="210" width="250" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="postgres" value="&amp;laquo;executionEnvironment&amp;raquo;&lt;br&gt;&lt;b&gt;PostgreSQL 17&lt;/b&gt;&lt;br&gt;&amp;laquo;artifact&amp;raquo;&lt;br&gt;pc_builder duomenų bazė" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeColor=#64748B;fillColor=#FFFFFF;fontColor=#0F172A;fontSize=14;" vertex="1" parent="neon">
+          <mxGeometry x="25" y="75" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="https" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;fontSize=14;fontStyle=1;labelBackgroundColor=#FFFFFF;endArrow=none;" edge="1" parent="1" source="browser" target="runtime">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="db-connection" value="PostgreSQL per TLS&lt;br&gt;(DATABASE_URL)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;fontSize=14;fontStyle=1;labelBackgroundColor=#FFFFFF;endArrow=none;" edge="1" parent="1" source="api" target="postgres">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
