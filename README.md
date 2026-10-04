@@ -17,7 +17,7 @@
 
 ### 1.1. Sistemos paskirtis
 
-PC Builder skirta kompiuterio komplektams sudaryti ir jais dalytis. Administratorius tvarko bendrą kompiuterio dalių katalogą ir pardavėjų pasiūlymus. Prisijungęs naudotojas sukuria komplektą, pasirenka jame jau esančius katalogo komponentus, peržiūri kainų pasiūlymus, gali komplektą paskelbti viešai ir palikti atsiliepimų apie matomus komplektus. (pc-builder)[https://pc-builder-ae0g.onrender.com/]
+PC Builder skirta kompiuterio komplektams sudaryti ir jais dalytis. Administratorius tvarko bendrą kompiuterio dalių katalogą ir pardavėjų pasiūlymus. Prisijungęs naudotojas sukuria komplektą, pasirenka jame jau esančius katalogo komponentus, peržiūri kainų pasiūlymus, gali komplektą paskelbti viešai ir palikti atsiliepimų apie matomus komplektus. [pc-builder](https://pc-builder-ae0g.onrender.com/)
 
 ### 1.2. Funkciniai reikalavimai
 
