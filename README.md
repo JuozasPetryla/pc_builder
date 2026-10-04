@@ -62,17 +62,13 @@ Render Docker servisas pateikia naudotojo sąsają ir API, o Neon teikia Postgre
 
 Sąsaja leidžia registruotis ir prisijungti, tvarkyti komplektus, rinktis katalogo komponentus, peržiūrėti pasiūlymus ir atsiliepimus. Administratoriaus meniu papildomai pateikiamas katalogo ir naudotojų valdymas. Įrašų kūrimo, keitimo ir šalinimo formos pateikiamos modaliniuose languose; veiksmo būsenos ir klaidos rodomos pačioje sąsajoje.
 
-### 3.1. Sąsajos ekrano kopijos
+### 3.1. Realizuotos sąsajos ekrano vaizdai
 
 ![Login](docs/login.png)
 
 ![Komplektų sąrašo langas](docs/komplektai.png)
 
 ![Komponentų kūrimo langas](docs/komponentai.png)
-
-### 3.2. Realizuotos sąsajos ekrano vaizdai
-
-Ataskaitos ekrano vaizdus reikia papildyti faktinėmis veikiančios aplikacijos nuotraukomis.
 
 ## 4. API specifikacija
 
