@@ -33,8 +33,8 @@ Visi sąrašai turi puslapiavimą; domeno sąrašai turi API palaikomus filtrus.
 
 ## Pakartojama patikra
 
-Paleidimo ir automatinių testų komandos pateiktos [README](README.md). API testai tikrina CRUD, hierarchiją, roles, privatumą ir sesijas; kliento testai – refresh lenktynes ir klaidų apdorojimą; Playwright – naudotojo ir administratoriaus veiksmų sekas su tikra API, modalines formas ir mobilų meniu.
+Paleidimo ir automatinių testų komandos pateiktos [projekto instrukcijoje](PROJEKTO_INSTRUKCIJA.md). API testai tikrina CRUD, hierarchiją, roles, privatumą ir sesijas; kliento testai – refresh lenktynes ir klaidų apdorojimą; Playwright – naudotojo ir administratoriaus veiksmų sekas su tikra API, modalines formas ir mobilų meniu.
 
-Patikros vykdymo komandos pateiktos pagrindiniame README. Publikavimo URL dar nėra, nes saugyklos ir debesijos paskyros nebuvo pateiktos.
+Patikros vykdymo komandos pateiktos [projekto instrukcijoje](PROJEKTO_INSTRUKCIJA.md). Publikavimo URL dar nėra, nes saugyklos ir debesijos paskyros nebuvo pateiktos.
 
 Prieš pateikiant darbą patikrinkite viešą URL iš kito tinklo. Automatinis dalių suderinamumo tikrinimas nėra įgyvendintas.

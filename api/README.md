@@ -1,6 +1,6 @@
 # API
 
-Bazinis kelias: `/api/v1`. Vietinė Swagger dokumentacija: `http://localhost:8000/api/docs`; ReDoc: `/api/redoc`; statinė OpenAPI schema – [openapi.json](openapi.json). Paleidimo ir testų komandos pateiktos [pagrindiniame README](../README.md).
+Bazinis kelias: `/api/v1`. Vietinė Swagger dokumentacija: `http://localhost:8000/api/docs`; ReDoc: `/api/redoc`; statinė OpenAPI schema – [openapi.json](openapi.json). Paleidimo ir testų komandos pateiktos [projekto instrukcijoje](../PROJEKTO_INSTRUKCIJA.md).
 
 ## Domenas ir prieiga
 
