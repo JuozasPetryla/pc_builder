@@ -17,9 +17,7 @@
 
 ### 1.1. Sistemos paskirtis
 
-PC Builder skirta kompiuterio komplektams sudaryti ir jais dalytis. Administratorius tvarko bendrą kompiuterio dalių katalogą ir pardavėjų pasiūlymus. Prisijungęs naudotojas sukuria komplektą, pasirenka jame jau esančius katalogo komponentus, peržiūri kainų pasiūlymus, gali komplektą paskelbti viešai ir palikti atsiliepimų apie matomus komplektus.
-
-Sistemą sudaro internetinė naudotojo sąsaja ir REST API. API saugo duomenis PostgreSQL duomenų bazėje. Svečio režimo nėra: katalogui ir komplektams peržiūrėti taip pat reikia prisijungti.
+PC Builder skirta kompiuterio komplektams sudaryti ir jais dalytis. Administratorius tvarko bendrą kompiuterio dalių katalogą ir pardavėjų pasiūlymus. Prisijungęs naudotojas sukuria komplektą, pasirenka jame jau esančius katalogo komponentus, peržiūri kainų pasiūlymus, gali komplektą paskelbti viešai ir palikti atsiliepimų apie matomus komplektus. (pc-builder)[https://pc-builder-ae0g.onrender.com/]
 
 ### 1.2. Funkciniai reikalavimai
 
@@ -37,15 +35,13 @@ Sistemą sudaro internetinė naudotojo sąsaja ir REST API. API saugo duomenis P
 
 **Administratorius (`admin`) papildomai gali** kurti, peržiūrėti, redaguoti ir šalinti bendro katalogo komponentus bei pardavėjų pasiūlymus, tvarkyti naudotojų paskyras, jų blokavimą ir roles.
 
-Prieiga prie įrašų tikrinama pagal rolę ir savininko identifikatorių. Naudotojas negali pasiekti svetimo privataus komplekto ar keisti svetimo komplekto ir atsiliepimo. Katalogo įrašai bendri: administratoriaus pakeista specifikacija ar kaina matoma visuose tą įrašą naudojančiuose komplektuose.
-
-Automatinis komponentų suderinamumo tikrinimas ir viso komplekto bendros kainos apskaičiavimas dar neįgyvendinti.
+Naudotojas negali pasiekti svetimo privataus komplekto ar keisti svetimo komplekto ir atsiliepimo. Katalogo įrašai bendri: administratoriaus pakeista specifikacija ar kaina matoma visuose tą įrašą naudojančiuose komplektuose.
 
 ## 2. Sistemos architektūra
 
-Klientinė dalis sukurta naudojant React ir Vite. Serverio dalis – Python FastAPI REST API. Duomenų prieigai naudojamas SQLAlchemy, o duomenys saugomi PostgreSQL. Vietinė aplinka ir testai paleidžiami Docker Compose. API pateikia JSON atsakymus ir OpenAPI dokumentaciją.
+Klientinė dalis sukurta naudojant React ir Vite. Serverio dalis – Python FastAPI REST API. Duomenų prieigai naudojamas SQLAlchemy, o duomenys saugomi PostgreSQL. Lokali aplinka ir testai paleidžiami Docker Compose. API pateikia JSON atsakymus ir OpenAPI dokumentaciją.
 
-Autentifikacijai naudojami HS256 pasirašyti JWT access žetonai ir atskiri refresh žetonai. Access žetone yra naudotojo ID ir rolė. Access žetono galiojimo laikas – 15 minučių, refresh sesijos – 7 dienos. Refresh žetonas rotuojamas jį panaudojus, o atsijungimas panaikina sesijos galiojimą. Slaptažodžiai saugomi maišos pavidalu.
+Autentifikacijai naudojami JWT access žetonai ir atskiri refresh žetonai. Access žetone yra naudotojo ID ir rolė. Access žetono galiojimo laikas – 15 minučių, refresh sesijos – 7 dienos. Refresh žetonas rotuojamas jį panaudojus, o atsijungimas panaikina sesijos galiojimą.
 
 Pagrindiniai domeno ryšiai:
 
@@ -60,13 +56,11 @@ Build → Component pasirinkimas → CatalogComponent → RetailOffer
 
 **[PLACEHOLDER: įterpti UML deployment diagramą, vaizduojančią numatomą diegimą.]**
 
-Numatytas publikavimas aprašytas Render Blueprint ir Neon Terraform konfigūracijomis. Render Docker servisas pateikia naudotojo sąsają ir API, o Neon teikia PostgreSQL duomenų bazę. Projekto dokumentacijoje faktinis publikavimas dar nepatvirtintas.
+Render Docker servisas pateikia naudotojo sąsają ir API, o Neon teikia PostgreSQL duomenų bazę. Projekto dokumentacijoje faktinis publikavimas dar nepatvirtintas.
 
 ## 3. Naudotojo sąsaja
 
 Sąsaja leidžia registruotis ir prisijungti, tvarkyti komplektus, rinktis katalogo komponentus, peržiūrėti pasiūlymus ir atsiliepimus. Administratoriaus meniu papildomai pateikiamas katalogo ir naudotojų valdymas. Įrašų kūrimo, keitimo ir šalinimo formos pateikiamos modaliniuose languose; veiksmo būsenos ir klaidos rodomos pačioje sąsajoje.
-
-Stiliui naudojama nuosekli tamsi spalvų paletė, vietinis Montserrat šriftas, SVG iliustracija ir vektorinės meniu ikonėlės. CSS lūžio taškai yra 1050 ir 700 px; mažame ekrane rodomas hamburgerio meniu. Įkėlimo indikatorius ir elementų animacijos sumažinamos, jei naršyklėje įjungtas `prefers-reduced-motion`.
 
 ### 3.1. Sąsajos wireframe’ai
 
@@ -86,21 +80,10 @@ API bazinis kelias yra `/api/v1`. Skaitoma OpenAPI specifikacija pateikta [`api/
 
 Specifikacijoje aprašyti API keliai, įvesties schemos ir operacijų atsako kodai. Joje dar nėra pilnų užklausos ir atsakymo pavyzdžių kiekvienai operacijai.
 
-Pavyzdinė trijų lygių hierarchinė užklausa:
-
-```http
-GET /api/v1/builds/{build_id}/components/{component_id}/offers
-Authorization: Bearer <access_token>
-```
-
-Sėkmingas sąrašas grąžinamas JSON masyvu. Kiti atsako kodai priklauso nuo operacijos ir jos sąlygų: `201` sukūrus įrašą, `204` sėkmingai pašalinus arba atsijungus, `401` neprisijungus ar pateikus negaliojantį žetoną, `403` neturint reikiamų teisių, `404` neradus įrašo nurodytoje hierarchijoje, `409` susidūrus su duomenų konfliktu, `422` pateikus netinkamus duomenis.
-
-Sąrašų metodai palaiko `limit` ir `offset` puslapiavimą bei ištekliui taikomus filtrus. Sąsajai skirtame [Postman užklausų rinkinyje](postman/PC_Builder_API.postman_collection.json) pateikti API bandymo scenarijai.
-
 ## 5. Išvados
 
-1. Sukurta React ir FastAPI sistema, kuri leidžia prisijungusiems naudotojams sudaryti komplektus iš administratoriaus tvarkomo bendro komponentų katalogo. Bendras katalogas pašalina poreikį kiekvienam naudotojui pakartotinai įvesti tas pačias komponentų specifikacijas.
-2. API įgyvendintos komplektų, komponentų pasirinkimų, pasiūlymų, katalogo, atsiliepimų ir naudotojų paskyrų operacijos. Puslapiavimas, filtrai, JSON atsakymai ir hierarchiniai URL leidžia nuosekliai pasiekti duomenis.
-3. JWT sesijų atnaujinimas, vaidmenimis bei įrašų savininkyste paremti leidimai leidžia atskirti naudotojų, moderatorių ir administratorių veiksmus.
-4. Prisitaikanti sąsaja suteikia modalines formas, veiksmų grįžtamąjį ryšį ir mobilią navigaciją. Automatinio komponentų suderinamumo tikrinimo ir bendros komplekto kainos skaičiavimo funkcijas reikia įgyvendinti atskirai.
-5. Publikavimui paruoštos Render ir Neon konfigūracijos, tačiau ataskaitoje viešas veikiančios svetainės adresas nepateiktas.
+1. Sukurta React ir FastAPI sistema, kuri leidžia prisijungusiems naudotojams sudaryti komplektus iš administratoriaus tvarkomo bendro komponentų katalogo.
+2. API įgyvendintos komplektų, komponentų pasirinkimų, pasiūlymų, katalogo, atsiliepimų ir naudotojų paskyrų operacijos.
+3. JWT sesijų atnaujinimas, vaidmenimis paremti leidimai leidžia atskirti naudotojų, moderatorių ir administratorių veiksmus.
+4. Prisitaikanti sąsaja suteikia modalines formas, veiksmų grįžtamąjį ryšį ir mobilią navigaciją.
+5. Publikavimui paruoštos Render ir Neon konfigūracijos.
