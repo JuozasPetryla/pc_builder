@@ -50,7 +50,7 @@ Build → Component pasirinkimas → CatalogComponent → RetailOffer
    └── Review
 ```
 
-`Build` yra naudotojo komplektas, `Component` – į jį įtrauktas pasirinkimas, `CatalogComponent` – bendra katalogo dalis, o `RetailOffer` – jos pardavėjo pasiūlymas. Naujoje duomenų bazėje migracijos sukuria demonstracinius duomenis: bent 5 komplektus ir atsiliepimus bei susijusius komponentų, katalogo ir pasiūlymų įrašus.
+`Build` yra naudotojo komplektas, `Component` – į jį įtrauktas pasirinkimas, `CatalogComponent` – bendra katalogo dalis, o `RetailOffer` – jos pardavėjo pasiūlymas.
 
 ### 2.1. Diegimo diagrama
 
