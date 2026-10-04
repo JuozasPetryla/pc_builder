@@ -54,23 +54,21 @@ Build → Component pasirinkimas → CatalogComponent → RetailOffer
 
 ### 2.1. Diegimo diagrama
 
-![PC Builder numatoma UML diegimo diagrama](docs/deployment.svg)
+![PC Builder numatoma UML diegimo diagrama](docs/deployment.png)
 
-Redaguojamas Draw.io failas: [`docs/deployment.drawio`](docs/deployment.drawio).
-
-Render Docker servisas pateikia naudotojo sąsają ir API, o Neon teikia PostgreSQL duomenų bazę. Projekto dokumentacijoje faktinis publikavimas dar nepatvirtintas.
+Render Docker servisas pateikia naudotojo sąsają ir API, o Neon teikia PostgreSQL duomenų bazę.
 
 ## 3. Naudotojo sąsaja
 
 Sąsaja leidžia registruotis ir prisijungti, tvarkyti komplektus, rinktis katalogo komponentus, peržiūrėti pasiūlymus ir atsiliepimus. Administratoriaus meniu papildomai pateikiamas katalogo ir naudotojų valdymas. Įrašų kūrimo, keitimo ir šalinimo formos pateikiamos modaliniuose languose; veiksmo būsenos ir klaidos rodomos pačioje sąsajoje.
 
-### 3.1. Sąsajos wireframe’ai
+### 3.1. Sąsajos ekrano kopijos
 
-**[PLACEHOLDER: įterpti 1-ą wireframe’ą – prisijungimo ir registracijos langą.]**
+![Login](docs/login.png)
 
-**[PLACEHOLDER: įterpti 2-ą wireframe’ą – komplektų sąrašą ir komplekto kūrimo langą.]**
+![Komplektų sąrašo langas](docs/komplektai.png)
 
-**[PLACEHOLDER: įterpti 3-ią wireframe’ą – katalogo komponento pasirinkimo arba administravimo langą.]**
+![Komponentų kūrimo langas](docs/komponentai.png)
 
 ### 3.2. Realizuotos sąsajos ekrano vaizdai
 

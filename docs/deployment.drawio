@@ -1,34 +1,70 @@
-<mxfile host="app.diagrams.net" modified="2026-10-04T18:00:00.000Z" agent="OpenAI Codex" version="25.0.3" type="device">
-  <diagram id="pc-builder-deployment" name="Diegimo diagrama">
-    <mxGraphModel dx="1200" dy="630" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="630" math="0" shadow="0">
+<mxfile host="app.diagrams.net">
+  <diagram name="Puslapis-1" id="6PPQcBxY8p2mD_evmmUu">
+    <mxGraphModel dx="1088" dy="608" grid="0" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="browser" value="&amp;laquo;device&amp;raquo;&lt;br&gt;&lt;b&gt;Naudotojo kompiuteris&lt;/b&gt;&lt;hr&gt;&amp;laquo;artifact&amp;raquo;&lt;br&gt;Naršyklė" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#475569;fillColor=#F8FAFC;fontColor=#0F172A;fontSize=16;shadow=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="225" width="230" height="160" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-4" parent="1" style="verticalAlign=top;align=center;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=4;html=1;whiteSpace=wrap;" value="&amp;lt;&amp;lt;node&amp;gt;&amp;gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Render&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="286" width="395" x="470" y="135" as="geometry" />
         </mxCell>
-        <mxCell id="render" value="&amp;laquo;node&amp;raquo;&lt;br&gt;&lt;b&gt;Render Cloud&lt;/b&gt;&lt;br&gt;Frankfurt region" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#334155;fillColor=#F1F5F9;fontColor=#0F172A;fontSize=16;shadow=1;" vertex="1" parent="1">
-          <mxGeometry x="340" y="70" width="500" height="480" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-5" parent="1" style="verticalAlign=top;align=center;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=4;html=1;whiteSpace=wrap;" value="&amp;lt;&amp;lt;executionEnvironment&amp;gt;&amp;gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Docker container&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="191" width="343" x="490" y="210" as="geometry" />
         </mxCell>
-        <mxCell id="runtime" value="&amp;laquo;executionEnvironment&amp;raquo;&lt;br&gt;&lt;b&gt;Docker konteineris&lt;/b&gt;&lt;br&gt;Render Web Service: pc-builder" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#0F766E;fillColor=#ECFDF5;fontColor=#134E4A;fontSize=15;shadow=1;" vertex="1" parent="render">
-          <mxGeometry x="35" y="105" width="430" height="330" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-8" parent="1" style="verticalAlign=top;align=center;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=4;html=1;whiteSpace=wrap;" value="&amp;lt;&amp;lt;node&amp;gt;&amp;gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Neon&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="140" width="190" x="934" y="210" as="geometry" />
         </mxCell>
-        <mxCell id="frontend" value="&amp;laquo;artifact&amp;raquo;&lt;br&gt;&lt;b&gt;React dist/&lt;/b&gt;&lt;br&gt;Statinė naudotojo sąsaja" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeColor=#64748B;fillColor=#FFFFFF;fontColor=#0F172A;fontSize=14;" vertex="1" parent="runtime">
-          <mxGeometry x="25" y="125" width="175" height="110" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-9" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="150" width="230" x="170" y="192" as="geometry" />
         </mxCell>
-        <mxCell id="api" value="&amp;laquo;artifact&amp;raquo;&lt;br&gt;&lt;b&gt;FastAPI app/&lt;/b&gt;&lt;br&gt;REST API&lt;br&gt;SQLAlchemy ORM" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeColor=#64748B;fillColor=#FFFFFF;fontColor=#0F172A;fontSize=14;" vertex="1" parent="runtime">
-          <mxGeometry x="225" y="125" width="175" height="110" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-1" parent="whcxr9pOAg8RqPpiXvVT-9" style="verticalAlign=top;align=center;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=4;html=1;whiteSpace=wrap;" value="&amp;lt;&amp;lt;device&amp;gt;&amp;gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Computer&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="150" width="230" as="geometry" />
         </mxCell>
-        <mxCell id="neon" value="&amp;laquo;node&amp;raquo;&lt;br&gt;&lt;b&gt;Neon Cloud&lt;/b&gt;&lt;br&gt;Valdoma duomenų bazės paslauga" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;strokeColor=#334155;fillColor=#F1F5F9;fontColor=#0F172A;fontSize=16;shadow=1;" vertex="1" parent="1">
-          <mxGeometry x="910" y="210" width="250" height="190" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-2" parent="whcxr9pOAg8RqPpiXvVT-9" style="html=1;dropTarget=0;whiteSpace=wrap;" value="«artifact»&lt;br&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Browser&lt;/font&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry height="45" width="120.32818532818533" x="47.95366795366795" y="63.94736842105263" as="geometry" />
         </mxCell>
-        <mxCell id="postgres" value="&amp;laquo;executionEnvironment&amp;raquo;&lt;br&gt;&lt;b&gt;PostgreSQL 17&lt;/b&gt;&lt;br&gt;&amp;laquo;artifact&amp;raquo;&lt;br&gt;pc_builder duomenų bazė" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;strokeColor=#64748B;fillColor=#FFFFFF;fontColor=#0F172A;fontSize=14;" vertex="1" parent="neon">
-          <mxGeometry x="25" y="75" width="200" height="90" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-3" parent="whcxr9pOAg8RqPpiXvVT-2" style="shape=module;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="https" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;fontSize=14;fontStyle=1;labelBackgroundColor=#FFFFFF;endArrow=none;" edge="1" parent="1" source="browser" target="runtime">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-10" parent="1" style="html=1;dropTarget=0;whiteSpace=wrap;" value="«artifact»&lt;br&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;React dist/&lt;/font&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry height="83" width="142" x="511" y="285" as="geometry" />
         </mxCell>
-        <mxCell id="db-connection" value="PostgreSQL per TLS&lt;br&gt;(DATABASE_URL)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0F766E;strokeWidth=2;fontSize=14;fontStyle=1;labelBackgroundColor=#FFFFFF;endArrow=none;" edge="1" parent="1" source="api" target="postgres">
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-11" parent="whcxr9pOAg8RqPpiXvVT-10" style="shape=module;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-14" parent="1" style="html=1;dropTarget=0;whiteSpace=wrap;" value="«artifact»&lt;br&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;PostgreSQL&lt;/font&gt;&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;db.sql&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="65" width="141" x="955" y="272" as="geometry" />
+        </mxCell>
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-15" parent="whcxr9pOAg8RqPpiXvVT-14" style="shape=module;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-16" edge="1" parent="1" source="whcxr9pOAg8RqPpiXvVT-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=90;exitDy=0;exitPerimeter=0;endArrow=none;endFill=0;" target="whcxr9pOAg8RqPpiXvVT-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="455.03" y="279" />
+              <mxPoint x="455.03" y="279" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="whcxr9pOAg8RqPpiXvVT-17" connectable="0" parent="whcxr9pOAg8RqPpiXvVT-16" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;HTTPS&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.1991" y="-3" as="geometry">
+            <mxPoint x="-13" y="8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="si7-ez2QkQn1D7TNCOzy-1" parent="1" style="html=1;dropTarget=0;whiteSpace=wrap;" value="«artifact»&lt;br&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;FastAPI app/&lt;/font&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry height="83" width="142" x="670" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="si7-ez2QkQn1D7TNCOzy-2" parent="si7-ez2QkQn1D7TNCOzy-1" style="shape=module;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="si7-ez2QkQn1D7TNCOzy-3" edge="1" parent="1" source="whcxr9pOAg8RqPpiXvVT-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.366;entryY=0.016;entryDx=0;entryDy=0;entryPerimeter=0;endArrow=none;endFill=0;" target="whcxr9pOAg8RqPpiXvVT-5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
